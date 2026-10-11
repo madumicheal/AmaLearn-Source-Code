@@ -21,11 +21,12 @@ npm run build
 ## MVP Scope
 
 - React + Vite client app.
-- Local, structured catalogue of curated learning resources.
+- Local, structured catalogue of 24 curated learning resources.
 - Deterministic matching logic with topic, level, format, time, and connectivity factors.
 - Recommendation cards with provider, source URL, metadata, and match reasons.
+- Suggested study path generated only from the top-ranked catalogue matches.
 - Empty and validation states.
-- Unit tests for catalogue validation and ranking behavior.
+- Unit and UI smoke tests for catalogue validation, ranking behavior, form submission, validation, and study-path rendering.
 
 ## Limitations
 

@@ -12,7 +12,23 @@ const topicAliases = {
   math: ["maths", "mathematics", "algebra", "statistics"],
   data: ["statistics", "machine learning", "python", "analytics"],
   ai: ["artificial intelligence", "machine learning", "ml"],
+  offline: ["low-data", "download", "offline learning"],
 };
+
+const topicStopwords = new Set([
+  "learn",
+  "learning",
+  "basic",
+  "basics",
+  "intro",
+  "introduction",
+  "course",
+  "lesson",
+  "lessons",
+  "resource",
+  "resources",
+  "study",
+]);
 
 export function findRecommendations(catalogue, needs, limit = 6) {
   if (!Array.isArray(catalogue) || catalogue.length === 0) {
@@ -23,7 +39,7 @@ export function findRecommendations(catalogue, needs, limit = 6) {
 
   return catalogue
     .map((resource) => scoreResource(resource, normalizedNeeds))
-    .filter((recommendation) => recommendation.score > 0)
+    .filter((recommendation) => recommendation.score > 0 && recommendation.topicMatched)
     .sort((left, right) => {
       if (right.score !== left.score) {
         return right.score - left.score;
@@ -137,8 +153,23 @@ export function scoreResource(resource, needs) {
   return {
     resource,
     score: Math.round(score),
+    topicMatched: topicScore > 0,
     reasons: reasons.slice(0, 5),
   };
+}
+
+export function createStudyPath(recommendations, maxSteps = 3) {
+  if (!Array.isArray(recommendations) || recommendations.length === 0) {
+    return [];
+  }
+
+  const labels = ["Start here", "Practice next", "Deepen with"];
+
+  return recommendations.slice(0, maxSteps).map((recommendation, index) => ({
+    label: labels[index] || `Step ${index + 1}`,
+    resource: recommendation.resource,
+    reason: buildStudyPathReason(recommendation, index),
+  }));
 }
 
 function normalizeNeeds(needs = {}) {
@@ -149,6 +180,21 @@ function normalizeNeeds(needs = {}) {
     format: needs.format || "any",
     connectivity: needs.connectivity || "standard",
   };
+}
+
+function buildStudyPathReason(recommendation, index) {
+  const topicReason = recommendation.reasons.find((reason) => reason.factor === "topic");
+  const formatReason = recommendation.reasons.find((reason) => reason.factor === "format");
+
+  if (index === 0 && topicReason) {
+    return "Use this first because it is the strongest match for the requested topic.";
+  }
+
+  if (formatReason) {
+    return formatReason.message;
+  }
+
+  return "Included because it is one of the highest-ranked catalogue matches.";
 }
 
 function scoreTopic(resource, goal) {
@@ -238,7 +284,7 @@ function scoreConnectivity(resource, connectivity) {
 function tokenize(value) {
   return normalizeText(value)
     .split(/[^a-z0-9+]+/)
-    .filter((token) => token.length > 1);
+    .filter((token) => token.length > 1 && !topicStopwords.has(token));
 }
 
 function expandTokens(tokens) {

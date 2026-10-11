@@ -17,10 +17,10 @@
 | Milestone | Status | Evidence / notes |
 |---|---|---|
 | 0. Repository reconnaissance and baseline | COMPLETE | Empty Git repository confirmed; React + Vite selected per user preference |
-| 1. Data model and credible resource catalogue | COMPLETE | 20 curated resources in `src/data/resources.js`; schema validation covered by tests |
-| 2. Explainable matching engine | COMPLETE | Deterministic matcher in `src/lib/matcher.js`; unit tests pass |
-| 3. Learner-facing experience | COMPLETE | React form, results cards, empty state, validation, responsive CSS |
-| 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; browser smoke check completed via keyboard submit |
+| 1. Data model and credible resource catalogue | COMPLETE | 24 curated resources in `src/data/resources.js`; schema validation covered by tests |
+| 2. Explainable matching engine | COMPLETE | Deterministic matcher and suggested study path in `src/lib/matcher.js`; tests pass |
+| 3. Learner-facing experience | COMPLETE | React form, suggested path, results cards, empty state, validation, responsive CSS |
+| 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; JSDOM UI smoke tests and browser review completed |
 | 5. Handoff and capstone demo | COMPLETE | README and this documentation updated; local dev server running; private Sites deployment succeeded |
 
 ## Repository baseline
@@ -45,7 +45,7 @@
 - [x] Each result identifies the provider/source and has a direct link.
 - [x] Each result explains why it matches using real metadata.
 - [x] Empty/no-close-match state is useful.
-- [ ] A suggested learning sequence is included only if it is grounded and feasible. Not included in this MVP pass.
+- [x] A suggested learning sequence is included only if it is grounded and feasible.
 
 ### Quality and trust
 - [x] Resource catalogue is structured and easy to maintain.
@@ -116,15 +116,15 @@ Record material decisions here. Include alternatives considered and why the sele
 **Work completed:**  
 - Added a structured local catalogue in `src/data/resources.js`.
 - Added `src/lib/validateResources.js` to check required fields, URL protocol, IDs, topics, levels, formats, duration values, and conservative availability fields.
-- Catalogue contains 20 resource records across web development, programming, Python, computer science, algebra, statistics, machine learning, digital marketing, analytics, business, and digital skills.
+- Catalogue contains 24 resource records across web development, programming, Python, computer science, algebra, statistics, machine learning, digital marketing, analytics, business, digital skills, Nigeria digital literacy, African reading resources, open education, and offline-first learning.
 - Unknown metadata is represented as `Unknown`/`unknown` rather than inferred.
 
 **Catalogue size and validation:**  
-- 20 resources.
+- 24 resources.
 - Validation is covered by `npm test`; all catalogue records currently pass schema checks.
 
 **Validation performed / results:**  
-- `npm test` passed with 6 tests, including catalogue validation.
+- `npm test` passed with 10 tests, including catalogue validation.
 
 **Issues / risks:**  
 - Resource metadata remains deliberately conservative. Many duration, accessibility, low-data, and downloadability fields are unknown where not safely verified.
@@ -141,10 +141,12 @@ Record material decisions here. Include alternatives considered and why the sele
 - Added deterministic ranking in `src/lib/matcher.js`.
 - Matching considers topic relevance, level fit, format preference, available time, and connectivity preference.
 - The matcher returns ranked resources with structured reasons grounded in resource metadata and selected preferences.
+- Added a suggested study path generator that uses only the top-ranked recommendations.
+- Tightened matching so unrelated resources cannot appear based only on level, format, time, or connectivity preferences.
 - Added unit tests in `test/matcher.test.js`.
 
 **Validation performed / results:**  
-- `npm test` passed with checks for deterministic output, topic ranking, format ranking, low-data/downloadable preference, empty catalogue behavior, and catalogue validation.
+- `npm test` passed with checks for deterministic output, topic ranking, format ranking, low-data/downloadable preference, empty catalogue behavior, no-close-match behavior, study-path grounding, and catalogue validation.
 
 **Issues / risks:**  
 - Topic matching is intentionally simple keyword/tag matching, not semantic search.
@@ -159,21 +161,23 @@ Record material decisions here. Include alternatives considered and why the sele
 
 **Work completed:**  
 - Built the React app in `src/main.jsx`.
+- Refactored the app into importable `src/App.jsx` plus a small browser bootstrap in `src/main.jsx`.
 - Added labelled form controls for goal, level, available time, preferred format, and connectivity.
 - Added recommendation cards with provider, direct URL, level, format, duration, connectivity/download status, accessibility notes, and match reasons.
+- Added a compact suggested path section above recommendations.
 - Added initial empty state, invalid-goal validation, reset action, and responsive CSS in `src/styles.css`.
 - Used AmaLearn consistently in the interface and README.
 
 **Validation performed / results:**  
 - `npm run build` passed.
-- Local browser preview rendered the form, initial empty state, catalogue count, and recommendation cards after a keyboard-submitted profile.
+- Local browser preview rendered the form, initial empty state, 24-resource catalogue count, suggested path, and recommendation cards after a keyboard-submitted profile.
 
 **Issues / risks:**  
 - Browser automation pointer-clicks behaved inconsistently in the in-app browser; keyboard submission was observed working. The app uses a normal form and submit button for real browser use.
-- No advanced end-to-end test framework is installed yet.
+- JSDOM UI smoke tests now cover form submission and validation.
 
 **Next action:**  
-- Add a lightweight end-to-end browser test if the capstone requires repeatable UI automation.
+- Add a full browser E2E test later if the capstone requires live-browser automation.
 
 ### Milestone 4 — Integration and quality assurance
 
@@ -188,12 +192,13 @@ Record material decisions here. Include alternatives considered and why the sele
 
 **Validation performed / results:**  
 - `npm install` completed: 64 packages added, 0 vulnerabilities reported.
-- `npm test` passed: 6 tests, 0 failures.
+- `npm test` passed: 10 tests, 0 failures.
 - `npm run build` passed: Vite production build completed.
 - `npm run dev -- --port 5173` is running locally.
 
 **Issues / risks:**  
 - Full visual regression, screen-reader, and external-link click-through checks are not automated.
+- Private deployed app review reached the expected ChatGPT login gate; local preview was used for functional review.
 - Source URLs are stored directly in the catalogue; future catalogue edits should continue to validate URLs and avoid unsupported claims.
 
 **Next action:**  
@@ -215,7 +220,7 @@ Record material decisions here. Include alternatives considered and why the sele
 
 **Known limitations:**  
 - Starter catalogue only; not exhaustive web search.
-- No accounts, persistence, analytics, paid APIs, LLM explanation, or learning-sequence feature.
+- No accounts, persistence, analytics, paid APIs, or LLM explanation.
 - Metadata remains conservative where duration, accessibility, low-data status, or downloadability could not be confidently represented.
 
 **Demo script:**  
@@ -245,9 +250,12 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 20:18 WAT | `npm test` | PASSED | 6 tests passed |
 | 2026-10-11 20:18 WAT | `npm run build` | PASSED | Vite production build completed |
 | 2026-10-11 20:19 WAT | `npm run dev -- --port 5173` | PASSED | Local server running at `http://127.0.0.1:5173/`; required escalated port permission after sandbox EPERM |
-| 2026-10-11 20:20 WAT | Browser smoke check | OBSERVED | Initial render showed labelled form, empty state, and 20-resource catalogue count |
+| 2026-10-11 20:20 WAT | Browser smoke check | OBSERVED | Initial render showed labelled form, empty state, and 20-resource catalogue count at that time |
 | 2026-10-11 20:22 WAT | Browser smoke check | OBSERVED | Keyboard-submitted `learn Python basics` rendered 6 cards; first visible title was `Python` |
 | 2026-10-11 20:47 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_5879e97a816481919556d9c4d1341ce2` |
+| 2026-10-11 21:08 WAT | `npm test` | PASSED | 10 tests passed, including JSDOM UI smoke tests |
+| 2026-10-11 21:08 WAT | `npm run build` | PASSED | Vite production build completed after catalogue, matcher, UI, and test updates |
+| 2026-10-11 21:09 WAT | Browser review | OBSERVED | Private deployment reached expected ChatGPT login gate; local preview verified 24 resources, suggested path, Python recommendations, and Nigeria digital literacy recommendations |
 
 ## Known limitations and risks
 
@@ -255,7 +263,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
 - The MVP does not promise exhaustive internet-wide discovery; it matches the available catalogue.
-- Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit and build/test validation passed.
+- Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
 
 ## Handoff notes
 
@@ -264,7 +272,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 6/6; `npm run build` passed.
-- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation.
-- **Known issues:** No installed E2E framework; catalogue is starter-sized; no optional learning sequence.
-- **Next three improvements:** Add E2E tests; expand catalogue with verified metadata; add a grounded suggested sequence from top-ranked resources.
+- **Actual test/build results:** `npm test` passed 10/10; `npm run build` passed.
+- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation, and JSDOM UI smoke validation.
+- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login.
+- **Next three improvements:** Add full browser E2E tests; expand catalogue with more verified regional resources; add better metadata provenance notes for each resource.

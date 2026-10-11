@@ -242,6 +242,54 @@ button {
   color: #17211f;
 }
 
+.study-path {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #c8d9d1;
+  border-radius: 8px;
+  background: #f0f8f4;
+  padding: 16px;
+}
+
+.study-path h3 {
+  margin-bottom: 0;
+  font-size: 1.08rem;
+}
+
+.study-path ol {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.study-path li {
+  display: grid;
+  gap: 5px;
+  border-left: 3px solid #206858;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.study-path span {
+  color: #206858;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.study-path strong {
+  line-height: 1.22;
+}
+
+.study-path small {
+  color: #596662;
+  line-height: 1.35;
+}
+
 .resource-list {
   display: grid;
   gap: 14px;
@@ -397,6 +445,7 @@ dd {
   }
 
   .form-row,
+  .study-path ol,
   .metadata-grid {
     grid-template-columns: 1fr;
   }

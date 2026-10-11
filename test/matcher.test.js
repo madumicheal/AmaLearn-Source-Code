@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resources } from "../src/data/resources.js";
-import { findRecommendations } from "../src/lib/matcher.js";
+import { createStudyPath, findRecommendations } from "../src/lib/matcher.js";
 import { validateResources } from "../src/lib/validateResources.js";
 
 test("catalogue records satisfy the required schema", () => {
@@ -86,4 +86,34 @@ test("empty catalogue returns no recommendations", () => {
     }),
     [],
   );
+});
+
+test("unrelated goals do not return preference-only matches", () => {
+  assert.deepEqual(
+    findRecommendations(resources, {
+      goal: "astronomy telescope",
+      level: "beginner",
+      timeMinutes: 30,
+      format: "any",
+      connectivity: "standard",
+    }),
+    [],
+  );
+});
+
+test("study path is grounded in ranked recommendations", () => {
+  const recommendations = findRecommendations(resources, {
+    goal: "python programming",
+    level: "beginner",
+    timeMinutes: 60,
+    format: "reading",
+    connectivity: "standard",
+  });
+
+  const path = createStudyPath(recommendations);
+
+  assert.equal(path.length, 3);
+  assert.equal(path[0].resource.id, recommendations[0].resource.id);
+  assert.equal(path[1].resource.id, recommendations[1].resource.id);
+  assert.match(path[0].reason, /strongest match|highest-ranked|Format|format/);
 });
