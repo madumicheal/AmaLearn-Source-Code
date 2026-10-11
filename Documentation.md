@@ -30,7 +30,7 @@
 | Adaptive 2. Learning plan | COMPLETE | Learners can add recommended resources, see a sequence, move items up/down, remove items, and identify the next activity |
 | Adaptive 3. Check-ins and adaptation | COMPLETE | Completed, partly completed, and need-help check-ins produce transparent next-step suggestions |
 | Adaptive 4. Persistence and polish | COMPLETE | Plan/check-ins persist in localStorage, malformed storage falls back safely, and reset progress is available |
-| Adaptive 5. Verification and documentation | IN PROGRESS | Tests and build passed locally; publishing pending |
+| Adaptive 5. Verification and documentation | COMPLETE | Tests and build passed locally and in Sites workflow; private deployment succeeded |
 
 ## Repository baseline
 
@@ -376,7 +376,7 @@ Record material decisions here. Include alternatives considered and why the sele
 
 ### Adaptive Milestone 5 — Verification and documentation
 
-**Status:** IN PROGRESS
+**Status:** COMPLETE
 
 **Work completed:**  
 - Updated `README.md` to describe AmaLearn as an adaptive learning companion.
@@ -385,6 +385,7 @@ Record material decisions here. Include alternatives considered and why the sele
 **Validation performed / results:**  
 - `npm test` passed: 21 tests, 0 failures.
 - `npm run build` passed with Vite production build and Worker packaging.
+- Sites deployment succeeded at `https://amalearn.docilejelly2.chatgpt.site` with version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_955a296b04a48191880c3764a48d0ac3`.
 
 **Known limitations:**  
 - Progress is single-device browser storage, not account-synced.
@@ -392,7 +393,7 @@ Record material decisions here. Include alternatives considered and why the sele
 - Live-browser pointer-click automation remains less reliable than the JSDOM flow in this environment.
 
 **Next action:**  
-- Publish the updated private Site and record the deployed version.
+- Configure a realtime search provider key, then add rate limiting and provider quality scoring.
 
 ## Test and command log
 
@@ -430,6 +431,9 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 22:23 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed before adaptive companion changes |
 | 2026-10-11 22:27 WAT | `npm test` | PASSED | 21 tests passed, including learning plan, check-ins, adaptation, persistence, and UI smoke coverage |
 | 2026-10-11 22:27 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after adaptive companion implementation |
+| 2026-10-11 22:31 WAT | Sites workflow `npm test` | PASSED | 21 tests passed during source packaging |
+| 2026-10-11 22:31 WAT | Sites workflow `npm run build` | PASSED | Production Worker archive created at `/private/tmp/amalearn-site-adaptive-companion.tar.gz` |
+| 2026-10-11 22:31 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_955a296b04a48191880c3764a48d0ac3` |
 
 ## Known limitations and risks
 
