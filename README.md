@@ -18,6 +18,23 @@ npm test
 npm run build
 ```
 
+## Realtime Search API
+
+AmaLearn now includes a server-side `POST /api/search` layer for realtime resource discovery. The endpoint normalizes web search results into the same resource shape used by the curated catalogue, then the client scores and displays them separately as `Realtime` and `Needs review`.
+
+The endpoint is intentionally conservative:
+
+- API keys stay on the server and are never exposed to the browser.
+- Unknown duration, accessibility, low-data, language, or download claims remain unknown.
+- Realtime results are not treated as curated catalogue records.
+- If no provider key is configured, the endpoint returns a clear `Search provider not configured` response.
+
+Supported provider environment variables:
+
+- Brave Search API: `BRAVE_SEARCH_API_KEY`
+- Tavily Search API: `TAVILY_API_KEY`
+- Google Custom Search JSON API: `GOOGLE_SEARCH_API_KEY` and `GOOGLE_SEARCH_CX`
+
 ## MVP Scope
 
 - React + Vite client app.
@@ -25,12 +42,14 @@ npm run build
 - Deterministic matching logic with topic, level, format, time, and connectivity factors.
 - Recommendation cards with provider, source URL, metadata, and match reasons.
 - Suggested study path generated only from the top-ranked catalogue matches.
+- Server-side realtime search endpoint with Brave, Tavily, and Google adapter support.
+- Realtime results displayed separately from curated recommendations with review status labels.
 - Empty and validation states.
-- Unit and UI smoke tests for catalogue validation, ranking behavior, form submission, validation, and study-path rendering.
+- Unit and UI smoke tests for catalogue validation, ranking behavior, form submission, validation, study-path rendering, and search API normalization.
 
 ## Limitations
 
-- AmaLearn matches only the local starter catalogue; it does not search the whole web.
+- AmaLearn can only return realtime web results after a provider key is configured in the server environment.
 - Metadata is conservative. Unknown duration, accessibility, low-data, or download claims are shown as unknown rather than guessed.
 - No learner account, analytics, persistence, paid API, or LLM is required.
 

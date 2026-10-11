@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { createServer } from "vite";
 
+const originalFetch = globalThis.fetch;
+
 async function renderApp() {
   const dom = new JSDOM("<!doctype html><html><body><div id=\"root\"></div></body></html>", {
     url: "http://localhost/",
@@ -42,6 +44,7 @@ async function cleanup({ dom, root, server }) {
   });
   await server.close();
   dom.window.close();
+  globalThis.fetch = originalFetch;
 }
 
 test("learner can submit needs and see recommendations with a study path", async () => {
@@ -78,6 +81,41 @@ test("empty goal submission shows validation without recommendations", async () 
 
     assert.equal(document.querySelector(".field-error").textContent, "Enter a topic or learning goal.");
     assert.equal(document.querySelectorAll(".resource-card").length, 0);
+  } finally {
+    await cleanup(rendered);
+  }
+});
+
+test("realtime search reports provider setup status", async () => {
+  const rendered = await renderApp();
+
+  try {
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          message:
+            "Realtime search is wired through /api/search, but no server-side search provider key is configured yet.",
+        }),
+        {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+
+    const goal = document.querySelector("#goal");
+    const form = document.querySelector("form");
+
+    goal.value = "astronomy telescope";
+
+    await act(async () => {
+      form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    await act(async () => {
+      document.querySelector(".realtime-panel button").click();
+    });
+
+    assert.match(document.querySelector(".realtime-error").textContent, /provider key is configured/);
   } finally {
     await cleanup(rendered);
   }

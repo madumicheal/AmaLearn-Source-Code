@@ -6,7 +6,7 @@ Last updated: 2026-10-11
 
 AmaLearn is in a strong MVP state for a capstone: the core flow works, the matching logic is deterministic and tested, the catalogue is conservative rather than inflated, and the UI now gives learners a source-backed recommendation list plus a suggested path.
 
-The next product risk is not basic functionality. It is trust at scale. To support any subject or course in realtime, AmaLearn needs a search-backed resource discovery layer with quality controls, not a direct client-side web search box.
+The next product risk is not basic functionality. It is trust at scale. To support any subject or course in realtime, AmaLearn now has a server-side search layer scaffold, and it still needs a configured provider key plus quality controls before realtime results should be treated as reliable.
 
 ## Current MVP Audit
 
@@ -47,7 +47,7 @@ Risks:
 - Topic matching is still keyword-based.
 - Synonyms are hand-maintained.
 - There is no provider quality score yet.
-- No deduplication is needed for the current catalogue, but it will matter for realtime search.
+- Realtime search deduplicates exact URLs, but it does not yet detect near-duplicate titles or mirrored content.
 
 Recommended next improvements:
 - Add provider quality weights for official/open/public-benefit sources.
@@ -68,6 +68,7 @@ Risks:
 - No automated accessibility engine is installed.
 - Screen-reader review is not complete.
 - External provider pages may vary widely in accessibility.
+- Realtime results must keep accessibility fields as unknown unless a provider page exposes verifiable metadata.
 
 Recommended next improvements:
 - Add `axe-core` or Playwright accessibility checks.
@@ -82,14 +83,14 @@ Strengths:
 - The suggested path gives the product a clearer “learn with direction” feeling.
 
 Risks:
-- Users may expect whole-web search because the goal field feels open-ended.
-- No-match states need to explain the difference between current catalogue search and future realtime search.
+- Users may assume realtime results are curated unless labels remain visible.
+- No-match states should explain when realtime search is unavailable because no provider key is configured.
 - Users cannot yet filter or sort after results appear.
 
 Recommended next improvements:
-- Add copy that clearly says the MVP searches the curated catalogue.
+- Keep clear labels between curated catalogue recommendations and realtime search results.
 - Add a filter/sort refinement panel only after the core flow remains stable.
-- Add a “broaden this search” option after realtime search exists.
+- Add an optional review workflow that lets a trusted reviewer promote a realtime result into the curated catalogue.
 
 ## Realtime Search Direction
 
@@ -104,7 +105,7 @@ Enable learners to search for any subject or course in realtime while preserving
 
 ### Recommended Architecture
 
-Use a hybrid model:
+AmaLearn uses a hybrid model:
 
 1. Search curated catalogue first.
 2. If close matches are insufficient, call a server-side realtime search endpoint.
@@ -126,6 +127,12 @@ Server flow:
 - Search query is constrained to learning intent, e.g. `"{goal}" course tutorial open educational resource`.
 - Results are normalized and scored.
 - Unsafe protocols, duplicate URLs, thin snippets, and irrelevant domains are filtered out.
+
+Current implementation status:
+- `POST /api/search` exists in local Vite middleware and the production Worker build.
+- Brave, Tavily, and Google Custom Search adapters are scaffolded behind server-side environment variables.
+- The client shows realtime results separately and marks them as needing review.
+- The endpoint returns a 503 setup response if no provider key is configured.
 
 ### Provider Options
 
@@ -157,16 +164,17 @@ Do not claim:
 
 ### Implementation Phases
 
-Phase 1: Search design scaffold
+Phase 1: Search design scaffold - complete
 - Add `sourceType`, `verificationNotes`, and `curationStatus` fields to resources.
 - Add UI labels for curated vs realtime results.
 - Add tests for search-result normalization using fixtures.
 
-Phase 2: Backend search endpoint
+Phase 2: Backend search endpoint - scaffold complete, provider configuration pending
 - Add a minimal server/API route.
 - Store provider API key server-side.
 - Normalize web results into AmaLearn resource candidates.
-- Add rate limiting and query length limits.
+- Add query length limits.
+- Add rate limiting before public or high-traffic use.
 
 Phase 3: Quality controls
 - Add allowed/discouraged domain lists.
@@ -193,9 +201,9 @@ Strong capstone message:
 
 ## Immediate Next Backlog
 
-1. Add provenance metadata fields to every catalogue entry.
-2. Add confidence labels to recommendation cards.
+1. Configure one realtime search provider key in the deployment environment.
+2. Add provider quality weights and confidence labels to recommendation cards.
 3. Add `axe-core` accessibility checks.
-4. Add backend search endpoint with one provider adapter.
-5. Add realtime result normalization tests.
+4. Add rate limiting for `/api/search`.
+5. Add domain quality rules and near-duplicate detection for realtime results.
 6. Add “Promote to curated catalogue” workflow for reviewed realtime results.

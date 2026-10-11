@@ -42,6 +42,12 @@ export function App() {
   const [needs, setNeeds] = useState(initialNeeds);
   const [submittedNeeds, setSubmittedNeeds] = useState(null);
   const [touched, setTouched] = useState(false);
+  const [realtimeSearch, setRealtimeSearch] = useState({
+    status: "idle",
+    message: "",
+    provider: "",
+    results: [],
+  });
 
   const catalogueIssues = useMemo(() => validateResources(resources), []);
   const recommendations = useMemo(() => {
@@ -55,6 +61,16 @@ export function App() {
     });
   }, [submittedNeeds, catalogueIssues]);
   const studyPath = useMemo(() => createStudyPath(recommendations), [recommendations]);
+  const realtimeRecommendations = useMemo(() => {
+    if (!submittedNeeds || realtimeSearch.results.length === 0) {
+      return [];
+    }
+
+    return findRecommendations(realtimeSearch.results, {
+      ...submittedNeeds,
+      timeMinutes: Number(submittedNeeds.timeMinutes),
+    });
+  }, [submittedNeeds, realtimeSearch.results]);
 
   const goalError =
     touched && needs.goal.trim().length < 2
@@ -82,16 +98,66 @@ export function App() {
 
     if (nextNeeds.goal.length < 2) {
       setSubmittedNeeds(null);
+      setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
       return;
     }
 
     setSubmittedNeeds(nextNeeds);
+    setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
   }
 
   function handleReset() {
     setNeeds(initialNeeds);
     setSubmittedNeeds(null);
     setTouched(false);
+    setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
+  }
+
+  async function handleRealtimeSearch() {
+    if (!submittedNeeds) {
+      return;
+    }
+
+    setRealtimeSearch({ status: "loading", message: "Searching trusted web sources...", provider: "", results: [] });
+
+    try {
+      const response = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: submittedNeeds.goal,
+          level: submittedNeeds.level,
+          format: submittedNeeds.format,
+          timeMinutes: submittedNeeds.timeMinutes,
+          connectivity: submittedNeeds.connectivity,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        setRealtimeSearch({
+          status: "error",
+          message: payload.message || "Realtime search is unavailable right now.",
+          provider: "",
+          results: [],
+        });
+        return;
+      }
+
+      setRealtimeSearch({
+        status: "complete",
+        message: payload.notice || "Realtime results need review before they become curated resources.",
+        provider: payload.provider,
+        results: payload.results || [],
+      });
+    } catch {
+      setRealtimeSearch({
+        status: "error",
+        message: "Realtime search could not be reached. Try again later.",
+        provider: "",
+        results: [],
+      });
+    }
   }
 
   return (
@@ -204,13 +270,29 @@ export function App() {
                 body="Enter a goal and preferences to see ranked, source-backed resources from the catalogue."
               />
             ) : recommendations.length === 0 ? (
-              <StatusMessage
-                title="No close matches yet"
-                body="Try a broader topic, choose any format, or use standard internet while the catalogue grows."
-              />
+              <>
+                <StatusMessage
+                  title="No close catalogue matches yet"
+                  body="Try a broader topic, or use realtime search to look beyond the curated catalogue."
+                />
+                <RealtimeSearchPanel
+                  status={realtimeSearch.status}
+                  message={realtimeSearch.message}
+                  provider={realtimeSearch.provider}
+                  results={realtimeRecommendations}
+                  onSearch={handleRealtimeSearch}
+                />
+              </>
             ) : (
               <>
                 <StudyPath steps={studyPath} />
+                <RealtimeSearchPanel
+                  status={realtimeSearch.status}
+                  message={realtimeSearch.message}
+                  provider={realtimeSearch.provider}
+                  results={realtimeRecommendations}
+                  onSearch={handleRealtimeSearch}
+                />
                 <div className="resource-list">
                   {recommendations.map((recommendation) => (
                     <ResourceCard
@@ -225,6 +307,48 @@ export function App() {
         </div>
       </section>
     </main>
+  );
+}
+
+function RealtimeSearchPanel({ status, message, provider, results, onSearch }) {
+  return (
+    <section className="realtime-panel" aria-labelledby="realtime-title">
+      <div>
+        <p className="eyebrow">Realtime search</p>
+        <h3 id="realtime-title">Search beyond the curated catalogue</h3>
+        <p>
+          Realtime results are normalized into AmaLearn's format, but they stay marked
+          as needing review until their metadata is verified.
+        </p>
+      </div>
+      <button
+        className="secondary-button"
+        type="button"
+        onClick={onSearch}
+        disabled={status === "loading"}
+      >
+        {status === "loading" ? "Searching..." : "Search web resources"}
+      </button>
+
+      {message ? (
+        <p className={status === "error" ? "realtime-error" : "realtime-note"}>{message}</p>
+      ) : null}
+
+      {results.length > 0 ? (
+        <div className="realtime-results">
+          <p className="realtime-note">
+            Showing {results.length} realtime result{results.length === 1 ? "" : "s"}
+            {provider ? ` from ${provider}` : ""}.
+          </p>
+          {results.map((recommendation) => (
+            <ResourceCard
+              key={recommendation.resource.id}
+              recommendation={recommendation}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -276,6 +400,11 @@ function ResourceCard({ recommendation }) {
       <div className="resource-main">
         <div>
           <p className="provider">{resource.provider}</p>
+          {resource.sourceType === "realtime" ? (
+            <span className="source-badge">Realtime - needs review</span>
+          ) : (
+            <span className="source-badge curated">Curated</span>
+          )}
           <h3>{resource.title}</h3>
         </div>
         <a
@@ -307,6 +436,11 @@ function ResourceCard({ recommendation }) {
         <p>
           <strong>Accessibility:</strong> {resource.accessibilityNotes || "Unknown"}
         </p>
+        {resource.verificationNotes ? (
+          <p>
+            <strong>Verification:</strong> {resource.verificationNotes}
+          </p>
+        ) : null}
       </div>
 
       <div className="match-reasons">

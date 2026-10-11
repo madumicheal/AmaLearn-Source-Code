@@ -5,13 +5,14 @@
 ## Project status
 
 - **Product:** AmaLearn
-- **Current milestone:** Milestone 5 — Handoff and capstone demo
+- **Current milestone:** Milestone 6 — Realtime search API scaffold
 - **Overall status:** COMPLETE
 - **Last updated:** 2026-10-11
 - **Current blocker:** None recorded
 - **Demo-ready:** Yes
 - **Private deployment:** https://amalearn.docilejelly2.chatgpt.site
 - **Latest audit:** `AUDIT_AND_ROADMAP.md`
+- **Realtime search:** `/api/search` implemented; provider key configuration pending
 
 ## Milestone tracker
 
@@ -23,6 +24,7 @@
 | 3. Learner-facing experience | COMPLETE | React form, suggested path, results cards, empty state, validation, responsive CSS |
 | 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; JSDOM UI smoke tests and browser review completed |
 | 5. Handoff and capstone demo | COMPLETE | README and this documentation updated; local dev server running; private Sites deployment succeeded |
+| 6. Realtime search API scaffold | COMPLETE | `POST /api/search` added with provider adapters, Worker routing, UI integration, and tests |
 
 ## Repository baseline
 
@@ -59,6 +61,9 @@
 - [x] No unnecessary personal data is collected or persisted.
 - [x] No secrets or API keys are committed.
 - [x] Setup/run/test instructions are documented.
+- [x] Realtime search route exists server-side.
+- [x] Realtime results are visually separated from curated catalogue results.
+- [x] Search provider secrets are read server-side only.
 
 ## Decisions and rationale
 
@@ -67,6 +72,7 @@ Record material decisions here. Include alternatives considered and why the sele
 | Date | Decision | Rationale | Impact |
 |---|---|---|---|
 | 2026-10-11 | Use React + Vite for the empty repository | User explicitly preferred React/Next/Vite; Vite keeps the MVP lightweight and fast to scaffold while preserving a clean React component model | Creates a small client-side app with local catalogue data and deterministic matching |
+| 2026-10-11 | Add realtime search behind `POST /api/search` instead of calling search APIs from the browser | Keeps provider keys server-side and lets AmaLearn normalize, label, and review realtime resources before presenting them as recommendations | Enables any-subject discovery while preserving the trust boundary between curated and unreviewed results |
 
 ## Milestone log
 
@@ -236,6 +242,33 @@ Record material decisions here. Include alternatives considered and why the sele
 **Next action:**  
 - Commit or publish when ready.
 
+### Milestone 6 — Realtime search API scaffold
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Added `src/server/search.js` with `POST /api/search`, input validation, provider selection, and result normalization.
+- Added provider adapters for Brave Search API, Tavily Search API, and Google Custom Search JSON API.
+- Added Vite dev middleware so local development can exercise `/api/search`.
+- Added a Worker build step that serves both static assets and `/api/search` from production.
+- Updated the learner UI with a realtime search panel, separate realtime result section, and `Curated` / `Realtime - needs review` labels.
+- Added tests for missing provider configuration, short-query validation, realtime normalization, and UI setup messaging.
+- Updated `README.md` and `AUDIT_AND_ROADMAP.md` to describe the implemented API layer and remaining provider configuration step.
+
+**Validation performed / results:**  
+- `npm test` passed: 14 tests, 0 failures.
+- `npm run build` passed: Vite build plus Worker packaging completed.
+- Direct Worker check returned `503 Search provider not configured` for `/api/search` without keys and `200 text/html; charset=utf-8` for `/`.
+- Local dev server `/api/search` check returned `503 Search provider not configured`, confirming middleware routing is active.
+
+**Known limitations:**  
+- No realtime results will appear until one provider key is configured in the server environment.
+- Realtime results are intentionally marked as needing review and should not be promoted into the curated catalogue automatically.
+- Rate limiting, domain quality rules, and near-duplicate detection are still backlog items.
+
+**Next action:**  
+- Configure one search provider key, then add rate limiting and provider quality scoring before broader use.
+
 ## Test and command log
 
 Append actual commands and results. Do not write “passed” unless the command ran and passed.
@@ -261,15 +294,21 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 21:23 WAT | `npm test` | PASSED | 10 tests passed after accessibility/metadata UI updates |
 | 2026-10-11 21:23 WAT | `npm run build` | PASSED | Vite production build completed after audit improvements |
 | 2026-10-11 21:24 WAT | Browser review | OBSERVED | Local preview verified skip link, resource-specific source link labels, language and checked metadata, and DL4ALL-first ranking for `digital literacy Nigeria` |
+| 2026-10-11 21:45 WAT | `npm test` | PASSED | 14 tests passed, including realtime search API and UI setup-state tests |
+| 2026-10-11 21:45 WAT | `npm run build` | PASSED | Vite production build completed and Worker files were generated in `dist/server` |
+| 2026-10-11 21:45 WAT | Direct Worker check | PASSED | `/api/search` returned `503 Search provider not configured` without keys; `/` returned `200 text/html; charset=utf-8` |
+| 2026-10-11 21:45 WAT | Local `/api/search` middleware check | PASSED | Running dev server returned `503 Search provider not configured`, confirming the route is wired |
+| 2026-10-11 21:47 WAT | `npm test` | PASSED | 14 tests passed after final UI label polish |
+| 2026-10-11 21:47 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after final UI label polish |
 
 ## Known limitations and risks
 
 - Catalogue coverage is intentionally small and curated.
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
-- The MVP does not promise exhaustive internet-wide discovery; it matches the available catalogue.
+- Realtime discovery is scaffolded but needs a configured provider key before it can return live web results.
 - Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
-- Realtime web search is not implemented yet; `AUDIT_AND_ROADMAP.md` recommends a backend-proxied provider architecture to avoid exposing API keys and to preserve recommendation trust.
+- Realtime results are not curated automatically; they should remain labelled as needing review until manually checked.
 
 ## Handoff notes
 
@@ -278,7 +317,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 10/10; `npm run build` passed.
-- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a backend/provider integration.
-- **Next three improvements:** Add provenance metadata per resource; add backend realtime search endpoint with one provider adapter; add full browser E2E and accessibility checks.
+- **Actual test/build results:** `npm test` passed 14/14; `npm run build` passed.
+- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
+- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a configured provider key before it returns live results.
+- **Next three improvements:** Configure one provider key; add rate limiting and provider quality scoring; add full browser E2E and accessibility checks.
