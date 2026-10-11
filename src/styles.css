@@ -209,7 +209,7 @@ button {
 }
 
 button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.7;
 }
 
@@ -361,6 +361,113 @@ button:disabled {
   gap: 14px;
 }
 
+.companion-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid #c8d9d1;
+  border-radius: 8px;
+  background: #f7fbf8;
+  padding: 16px;
+}
+
+.companion-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.companion-heading h3 {
+  margin-bottom: 0;
+  font-size: 1.08rem;
+}
+
+.companion-panel .status-message {
+  min-height: 150px;
+}
+
+.next-activity,
+.adaptive-suggestion,
+.plan-message {
+  border-left: 3px solid #206858;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.next-activity h4,
+.adaptive-suggestion p,
+.plan-message {
+  margin-bottom: 6px;
+}
+
+.next-activity p,
+.adaptive-suggestion p {
+  color: #4b5754;
+  line-height: 1.45;
+}
+
+.adaptive-suggestion {
+  border-left-color: #f8c66a;
+}
+
+.adaptive-suggestion strong {
+  display: block;
+  color: #17211f;
+}
+
+.checkin-controls {
+  display: grid;
+  max-width: 320px;
+  gap: 8px;
+}
+
+.plan-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+  gap: 14px;
+  border: 1px solid #d8dacf;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 14px;
+}
+
+.plan-item h4 {
+  margin-bottom: 6px;
+  line-height: 1.22;
+}
+
+.plan-item p {
+  margin-bottom: 5px;
+  color: #4b5754;
+  font-size: 0.92rem;
+}
+
+.step-label {
+  color: #206858;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.plan-actions {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.plan-actions button,
+.add-plan-button {
+  min-height: 38px;
+}
+
 .resource-card {
   border: 1px solid #d8dacf;
   border-radius: 8px;
@@ -480,6 +587,10 @@ dd {
   color: #3f4c48;
 }
 
+.add-plan-button {
+  margin-top: 14px;
+}
+
 @media (max-width: 860px) {
   .app-shell {
     padding: 20px;
@@ -487,7 +598,8 @@ dd {
 
   .topbar,
   .resource-main,
-  .results-heading {
+  .results-heading,
+  .companion-heading {
     align-items: start;
     flex-direction: column;
   }
@@ -537,6 +649,10 @@ dd {
 
   .action-row {
     flex-direction: column;
+  }
+
+  .plan-item {
+    grid-template-columns: 1fr;
   }
 
   .resource-link {

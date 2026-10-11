@@ -1,5 +1,18 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { resources } from "./data/resources.js";
+import {
+  addResourceToPlan,
+  createEmptyPlan,
+  getNextActivity,
+  moveResourceInPlan,
+  PLAN_STORAGE_KEY,
+  recordCheckIn,
+  removeResourceFromPlan,
+  restorePlan,
+  serializePlan,
+  suggestNextStep,
+  summarizeProgress,
+} from "./lib/learningPlan.js";
 import { createStudyPath, findRecommendations } from "./lib/matcher.js";
 import { validateResources } from "./lib/validateResources.js";
 
@@ -38,10 +51,21 @@ const initialNeeds = {
   connectivity: "standard",
 };
 
+const difficultyOptions = [
+  { value: "", label: "Difficulty not recorded" },
+  { value: "easy", label: "Felt manageable" },
+  { value: "ok", label: "Felt okay" },
+  { value: "hard", label: "Felt difficult" },
+];
+
 export function App() {
   const [needs, setNeeds] = useState(initialNeeds);
   const [submittedNeeds, setSubmittedNeeds] = useState(null);
   const [touched, setTouched] = useState(false);
+  const [learningPlan, setLearningPlan] = useState(loadSavedPlan);
+  const [planMessage, setPlanMessage] = useState("");
+  const [checkInDifficulty, setCheckInDifficulty] = useState("");
+  const [adaptiveSuggestion, setAdaptiveSuggestion] = useState(null);
   const [realtimeSearch, setRealtimeSearch] = useState({
     status: "idle",
     message: "",
@@ -71,11 +95,21 @@ export function App() {
       timeMinutes: Number(submittedNeeds.timeMinutes),
     });
   }, [submittedNeeds, realtimeSearch.results]);
+  const allRecommendations = useMemo(
+    () => [...recommendations, ...realtimeRecommendations],
+    [recommendations, realtimeRecommendations],
+  );
+  const planSummary = useMemo(() => summarizeProgress(learningPlan), [learningPlan]);
+  const nextActivity = useMemo(() => getNextActivity(learningPlan), [learningPlan]);
 
   const goalError =
     touched && needs.goal.trim().length < 2
       ? "Enter a topic or learning goal."
       : "";
+
+  useEffect(() => {
+    savePlan(learningPlan);
+  }, [learningPlan]);
 
   function updateNeed(field, value) {
     setNeeds((current) => ({ ...current, [field]: value }));
@@ -99,11 +133,13 @@ export function App() {
     if (nextNeeds.goal.length < 2) {
       setSubmittedNeeds(null);
       setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
+      setAdaptiveSuggestion(null);
       return;
     }
 
     setSubmittedNeeds(nextNeeds);
     setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
+    setAdaptiveSuggestion(null);
   }
 
   function handleReset() {
@@ -111,6 +147,7 @@ export function App() {
     setSubmittedNeeds(null);
     setTouched(false);
     setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
+    setAdaptiveSuggestion(null);
   }
 
   async function handleRealtimeSearch() {
@@ -158,6 +195,47 @@ export function App() {
         results: [],
       });
     }
+  }
+
+  function handleAddToPlan(resource) {
+    setLearningPlan((currentPlan) => addResourceToPlan(currentPlan, resource));
+    setPlanMessage(`${resource.title} is in your learning plan.`);
+  }
+
+  function handleRemoveFromPlan(resourceId) {
+    setLearningPlan((currentPlan) => removeResourceFromPlan(currentPlan, resourceId));
+    setAdaptiveSuggestion(null);
+    setPlanMessage("Removed from your learning plan.");
+  }
+
+  function handleMovePlanItem(resourceId, direction) {
+    setLearningPlan((currentPlan) => moveResourceInPlan(currentPlan, resourceId, direction));
+    setAdaptiveSuggestion(null);
+    setPlanMessage("Learning plan sequence updated.");
+  }
+
+  function handleCheckIn(resourceId, outcome) {
+    setLearningPlan((currentPlan) => {
+      const updatedPlan = recordCheckIn(currentPlan, resourceId, outcome, checkInDifficulty);
+      setAdaptiveSuggestion(
+        suggestNextStep({
+          plan: updatedPlan,
+          resourceId,
+          outcome,
+          difficulty: checkInDifficulty,
+          recommendations: allRecommendations,
+          needs: submittedNeeds || needs,
+        }),
+      );
+      return updatedPlan;
+    });
+    setPlanMessage("Check-in saved.");
+  }
+
+  function handleResetProgress() {
+    setLearningPlan(createEmptyPlan());
+    setAdaptiveSuggestion(null);
+    setPlanMessage("Learning progress reset on this device.");
   }
 
   return (
@@ -280,7 +358,9 @@ export function App() {
                   message={realtimeSearch.message}
                   provider={realtimeSearch.provider}
                   results={realtimeRecommendations}
+                  plan={learningPlan}
                   onSearch={handleRealtimeSearch}
+                  onAddToPlan={handleAddToPlan}
                 />
               </>
             ) : (
@@ -291,18 +371,36 @@ export function App() {
                   message={realtimeSearch.message}
                   provider={realtimeSearch.provider}
                   results={realtimeRecommendations}
+                  plan={learningPlan}
                   onSearch={handleRealtimeSearch}
+                  onAddToPlan={handleAddToPlan}
                 />
                 <div className="resource-list">
                   {recommendations.map((recommendation) => (
                     <ResourceCard
                       key={recommendation.resource.id}
                       recommendation={recommendation}
+                      isInPlan={isResourceInPlan(learningPlan, recommendation.resource.id)}
+                      onAddToPlan={handleAddToPlan}
                     />
                   ))}
                 </div>
               </>
             )}
+            <LearningCompanion
+              plan={learningPlan}
+              summary={planSummary}
+              nextActivity={nextActivity}
+              message={planMessage}
+              difficulty={checkInDifficulty}
+              difficultyOptions={difficultyOptions}
+              suggestion={adaptiveSuggestion}
+              onDifficultyChange={setCheckInDifficulty}
+              onCheckIn={handleCheckIn}
+              onMove={handleMovePlanItem}
+              onRemove={handleRemoveFromPlan}
+              onResetProgress={handleResetProgress}
+            />
           </section>
         </div>
       </section>
@@ -310,7 +408,7 @@ export function App() {
   );
 }
 
-function RealtimeSearchPanel({ status, message, provider, results, onSearch }) {
+function RealtimeSearchPanel({ status, message, provider, results, plan, onSearch, onAddToPlan }) {
   return (
     <section className="realtime-panel" aria-labelledby="realtime-title">
       <div>
@@ -344,6 +442,8 @@ function RealtimeSearchPanel({ status, message, provider, results, onSearch }) {
             <ResourceCard
               key={recommendation.resource.id}
               recommendation={recommendation}
+              isInPlan={isResourceInPlan(plan, recommendation.resource.id)}
+              onAddToPlan={onAddToPlan}
             />
           ))}
         </div>
@@ -392,7 +492,158 @@ function StudyPath({ steps }) {
   );
 }
 
-function ResourceCard({ recommendation }) {
+function LearningCompanion({
+  plan,
+  summary,
+  nextActivity,
+  message,
+  difficulty,
+  difficultyOptions,
+  suggestion,
+  onDifficultyChange,
+  onCheckIn,
+  onMove,
+  onRemove,
+  onResetProgress,
+}) {
+  return (
+    <section className="companion-panel" aria-labelledby="companion-title">
+      <div className="companion-heading">
+        <div>
+          <p className="eyebrow">Adaptive companion</p>
+          <h3 id="companion-title">Plan, check in, and adapt your next step</h3>
+        </div>
+        <span className="catalogue-count">
+          {summary.completed}/{summary.total} completed
+        </span>
+      </div>
+
+      {plan.items.length === 0 ? (
+        <StatusMessage
+          title="No learning plan yet"
+          body="Add a resource from your recommendations to create a small plan for your next study session."
+        />
+      ) : (
+        <>
+          {nextActivity ? (
+            <div className="next-activity">
+              <p className="eyebrow">Next activity</p>
+              <h4>{nextActivity.resource.title}</h4>
+              <p>
+                Start here because this is the first unfinished item in your plan. Keep it
+                manageable and check in when you finish studying.
+              </p>
+              <a
+                className="resource-link"
+                href={nextActivity.resource.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Open next activity source for ${nextActivity.resource.title}`}
+              >
+                Open source
+              </a>
+            </div>
+          ) : (
+            <StatusMessage
+              title="Plan complete"
+              body="All planned resources are marked complete. Search a related goal or add another recommendation when you are ready."
+            />
+          )}
+
+          {message ? <p className="plan-message">{message}</p> : null}
+
+          {suggestion ? (
+            <div className="adaptive-suggestion">
+              <p className="eyebrow">Suggested next step</p>
+              <p>{suggestion.message}</p>
+              {suggestion.resource ? (
+                <strong>{suggestion.resource.title}</strong>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="checkin-controls">
+            <label htmlFor="difficulty">Optional difficulty</label>
+            <select
+              id="difficulty"
+              value={difficulty}
+              onChange={(event) => onDifficultyChange(event.target.value)}
+            >
+              {difficultyOptions.map((option) => (
+                <option key={option.value || "none"} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <ol className="plan-list">
+            {plan.items.map((item, index) => (
+              <li key={item.resource.id} className="plan-item">
+                <div>
+                  <span className="step-label">Step {index + 1}</span>
+                  <h4>{item.resource.title}</h4>
+                  <p>
+                    {formatValue(item.resource.format)} - {formatValue(item.resource.level)} -{" "}
+                    {item.resource.durationLabel}
+                  </p>
+                  <p>
+                    Access: {availabilityLabel(item.resource.lowData)} low-data,{" "}
+                    {availabilityLabel(item.resource.downloadable)} download
+                  </p>
+                  <p>Status: {formatValue(item.status)}</p>
+                </div>
+                <div className="plan-actions" aria-label={`Check in for ${item.resource.title}`}>
+                  <button type="button" onClick={() => onCheckIn(item.resource.id, "completed")}>
+                    Completed
+                  </button>
+                  <button type="button" onClick={() => onCheckIn(item.resource.id, "partial")}>
+                    Partly completed
+                  </button>
+                  <button type="button" onClick={() => onCheckIn(item.resource.id, "help")}>
+                    I need help
+                  </button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => onMove(item.resource.id, "up")}
+                    disabled={index === 0}
+                  >
+                    Move up
+                  </button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => onMove(item.resource.id, "down")}
+                    disabled={index === plan.items.length - 1}
+                  >
+                    Move down
+                  </button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => onRemove(item.resource.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <button className="secondary-button" type="button" onClick={onResetProgress}>
+            Reset learning progress
+          </button>
+          <p className="field-hint">
+            Progress is saved only in this browser on this device.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ResourceCard({ recommendation, isInPlan = false, onAddToPlan }) {
   const { resource, reasons } = recommendation;
 
   return (
@@ -451,6 +702,17 @@ function ResourceCard({ recommendation }) {
           ))}
         </ul>
       </div>
+
+      {onAddToPlan ? (
+        <button
+          className="secondary-button add-plan-button"
+          type="button"
+          onClick={() => onAddToPlan(resource)}
+          disabled={isInPlan}
+        >
+          {isInPlan ? "In learning plan" : "Add to learning plan"}
+        </button>
+      ) : null}
     </article>
   );
 }
@@ -488,4 +750,27 @@ function availabilityLabel(value) {
     return "Not verified";
   }
   return "Unknown";
+}
+
+function isResourceInPlan(plan, resourceId) {
+  return plan.items.some((item) => item.resource.id === resourceId);
+}
+
+function loadSavedPlan() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return createEmptyPlan();
+  }
+  return restorePlan(window.localStorage.getItem(PLAN_STORAGE_KEY));
+}
+
+function savePlan(plan) {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(PLAN_STORAGE_KEY, serializePlan(plan));
+  } catch {
+    // Keep the app usable if private browsing or storage limits block persistence.
+  }
 }

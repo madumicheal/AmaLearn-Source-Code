@@ -4,10 +4,11 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { JSDOM } from "jsdom";
 import { createServer } from "vite";
+import { PLAN_STORAGE_KEY } from "../src/lib/learningPlan.js";
 
 const originalFetch = globalThis.fetch;
 
-async function renderApp() {
+async function renderApp(options = {}) {
   const dom = new JSDOM("<!doctype html><html><body><div id=\"root\"></div></body></html>", {
     url: "http://localhost/",
   });
@@ -22,6 +23,9 @@ async function renderApp() {
     configurable: true,
     value: dom.window.navigator,
   });
+  if (Object.hasOwn(options, "storedPlan")) {
+    dom.window.localStorage.setItem(PLAN_STORAGE_KEY, options.storedPlan);
+  }
 
   const server = await createServer({
     appType: "custom",
@@ -116,6 +120,49 @@ test("realtime search reports provider setup status", async () => {
     });
 
     assert.match(document.querySelector(".realtime-error").textContent, /provider key is configured/);
+  } finally {
+    await cleanup(rendered);
+  }
+});
+
+test("learner can add a recommendation to a plan and record a check-in", async () => {
+  const rendered = await renderApp();
+
+  try {
+    const goal = document.querySelector("#goal");
+    const form = document.querySelector("form");
+
+    goal.value = "learn Python basics";
+
+    await act(async () => {
+      form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true }));
+    });
+
+    await act(async () => {
+      document.querySelector(".resource-card .add-plan-button").click();
+    });
+
+    assert.match(document.querySelector(".companion-panel").textContent, /Next activity/);
+    assert.match(document.querySelector(".companion-panel").textContent, /Python/);
+
+    await act(async () => {
+      [...document.querySelectorAll(".plan-actions button")]
+        .find((button) => button.textContent === "Completed")
+        .click();
+    });
+
+    assert.match(document.querySelector(".adaptive-suggestion").textContent, /completed/);
+    assert.ok(window.localStorage.getItem(PLAN_STORAGE_KEY).includes("python"));
+  } finally {
+    await cleanup(rendered);
+  }
+});
+
+test("malformed saved progress falls back to an empty learning plan", async () => {
+  const rendered = await renderApp({ storedPlan: "{not-json" });
+
+  try {
+    assert.match(document.querySelector(".companion-panel").textContent, /No learning plan yet/);
   } finally {
     await cleanup(rendered);
   }

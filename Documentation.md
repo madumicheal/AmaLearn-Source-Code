@@ -5,7 +5,7 @@
 ## Project status
 
 - **Product:** AmaLearn
-- **Current milestone:** Milestone 6 — Realtime search API scaffold
+- **Current milestone:** Adaptive companion Milestone 5 — Verification and documentation
 - **Overall status:** COMPLETE
 - **Last updated:** 2026-10-11
 - **Current blocker:** None recorded
@@ -13,6 +13,7 @@
 - **Private deployment:** https://amalearn.docilejelly2.chatgpt.site
 - **Latest audit:** `AUDIT_AND_ROADMAP.md`
 - **Realtime search:** `/api/search` implemented; provider key configuration pending
+- **Adaptive companion:** Implemented with local learning plans, check-ins, and rules-based next steps
 
 ## Milestone tracker
 
@@ -25,6 +26,11 @@
 | 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; JSDOM UI smoke tests and browser review completed |
 | 5. Handoff and capstone demo | COMPLETE | README and this documentation updated; local dev server running; private Sites deployment succeeded |
 | 6. Realtime search API scaffold | COMPLETE | `POST /api/search` added with provider adapters, Worker routing, UI integration, and tests |
+| Adaptive 1. Inspect and plan | COMPLETE | Existing discovery flow, matcher, UI, tests, and deployment inspected; implementation path recorded |
+| Adaptive 2. Learning plan | COMPLETE | Learners can add recommended resources, see a sequence, move items up/down, remove items, and identify the next activity |
+| Adaptive 3. Check-ins and adaptation | COMPLETE | Completed, partly completed, and need-help check-ins produce transparent next-step suggestions |
+| Adaptive 4. Persistence and polish | COMPLETE | Plan/check-ins persist in localStorage, malformed storage falls back safely, and reset progress is available |
+| Adaptive 5. Verification and documentation | IN PROGRESS | Tests and build passed locally; publishing pending |
 
 ## Repository baseline
 
@@ -64,6 +70,11 @@
 - [x] Realtime search route exists server-side.
 - [x] Realtime results are visually separated from curated catalogue results.
 - [x] Search provider secrets are read server-side only.
+- [x] Learner can add resources to a simple learning plan.
+- [x] Learner can remove and reorder planned resources.
+- [x] Learner can record completed, partly completed, or need-help check-ins.
+- [x] AmaLearn gives transparent next-step suggestions after check-ins.
+- [x] Progress is saved locally and can be reset.
 
 ## Decisions and rationale
 
@@ -73,6 +84,7 @@ Record material decisions here. Include alternatives considered and why the sele
 |---|---|---|---|
 | 2026-10-11 | Use React + Vite for the empty repository | User explicitly preferred React/Next/Vite; Vite keeps the MVP lightweight and fast to scaffold while preserving a clean React component model | Creates a small client-side app with local catalogue data and deterministic matching |
 | 2026-10-11 | Add realtime search behind `POST /api/search` instead of calling search APIs from the browser | Keeps provider keys server-side and lets AmaLearn normalize, label, and review realtime resources before presenting them as recommendations | Enables any-subject discovery while preserving the trust boundary between curated and unreviewed results |
+| 2026-10-11 | Implement adaptive learning with local browser storage and deterministic rules | The brief asks for a lightweight companion, not accounts, a database, or an AI tutor; local storage is enough for a private single-device plan and check-ins | Adds persistence and adaptation without new infrastructure, secrets, or learner accounts |
 
 ## Milestone log
 
@@ -269,6 +281,119 @@ Record material decisions here. Include alternatives considered and why the sele
 **Next action:**  
 - Configure one search provider key, then add rate limiting and provider quality scoring before broader use.
 
+### Adaptive Milestone 1 — Inspect and plan
+
+**Status:** COMPLETE
+
+**Existing features to preserve:**  
+- Learner needs form for goal, level, time, format, and connectivity.
+- Curated 24-resource catalogue with conservative metadata.
+- Deterministic matching in `src/lib/matcher.js`.
+- Recommendation cards, suggested path, validation, reset, and responsive styling.
+- Server-side `/api/search` scaffold and separate realtime result labelling.
+- Existing Node and JSDOM tests.
+
+**Smallest implementation path:**  
+- Add `src/lib/learningPlan.js` for plan creation, remove/reorder helpers, check-ins, progress summaries, localStorage parsing, and rule-based next-step suggestions.
+- Extend `src/App.jsx` with a single companion panel below discovery results: selected plan, next activity, check-in controls, and reset-progress action.
+- Add “Add to plan” actions to recommendation cards while preserving source links and match explanations.
+- Persist only plan item IDs, resource snapshots, check-ins, and timestamps in localStorage; do not store account data or imply cross-device sync.
+- Keep adaptation deterministic: completed suggests another planned resource or a reasonable next recommendation; partly completed suggests continuing or a shorter alternative; needs help suggests beginner-friendly, alternative-format, or shorter relevant resources where available.
+
+**Dependencies, storage, API, privacy, and deployment implications:**  
+- No new dependency is required.
+- No database, account system, analytics, LLM, or external API is needed for adaptive learning.
+- Browser localStorage is sufficient for the initial companion and must tolerate missing, malformed, or outdated data.
+- Realtime search remains available through the existing `/api/search` route, but live web results still require a provider key.
+- Production deployment remains the existing private Sites Worker build.
+
+**Milestone plan:**  
+- Adaptive Milestone 2: add learning plan helpers, selection UI, sequencing, remove controls, and next activity.
+- Adaptive Milestone 3: add quick check-ins for completed, partly completed, and needs help, plus transparent rule explanations.
+- Adaptive Milestone 4: add localStorage save/restore, malformed-data handling, reset progress, and mobile/accessibility polish.
+- Adaptive Milestone 5: add/adjust tests, run `npm test` and `npm run build`, update docs and README, publish privately.
+
+**Validation performed / results:**  
+- `npm test` passed: 14 tests, 0 failures before adaptive changes.
+- `npm run build` passed before adaptive changes.
+
+**Next action:**  
+- Proceed with Adaptive Milestone 2 using the existing React + Vite app and deterministic local modules.
+
+### Adaptive Milestone 2 — Learning plan
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Added `src/lib/learningPlan.js` with plan creation, resource snapshots, deduplication, removal, moving items up/down, next-activity selection, and progress summaries.
+- Added “Add to learning plan” actions to curated and realtime recommendation cards.
+- Added an Adaptive Companion panel that shows the selected sequence, resource metadata, access requirements, and the obvious next activity.
+- Preserved the existing discovery form, recommendation cards, suggested path, and realtime search panel.
+
+**Validation performed / results:**  
+- `npm test` passed with learning-plan unit tests and existing discovery tests.
+
+**Next action:**  
+- Add check-ins and rules-based adaptation.
+
+### Adaptive Milestone 3 — Check-ins and adaptation
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Added quick check-in actions for `Completed`, `Partly completed`, and `I need help`.
+- Added optional difficulty recording.
+- Added transparent next-step suggestion rules:
+  - completed suggests the next planned resource or a relevant next recommendation;
+  - partly completed suggests continuing or a shorter fitting activity;
+  - need-help suggests a beginner-friendly or alternative-format support resource where available.
+- Kept all adaptation deterministic and avoided mastery claims.
+
+**Validation performed / results:**  
+- Unit tests cover all three check-in outcomes and expected suggestion types.
+- UI smoke test covers adding a plan item and recording a completed check-in.
+
+**Next action:**  
+- Add local progress persistence and reset behavior.
+
+### Adaptive Milestone 4 — Persistence and polish
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Added localStorage persistence using `amalearn.learningPlan.v1`.
+- Added safe restore logic for missing, malformed, or outdated stored data.
+- Added a visible reset progress action.
+- Added copy clarifying that progress is saved only in the current browser on the current device.
+- Styled the companion panel, plan sequence, check-in controls, and adaptive suggestion states for desktop and mobile layouts.
+
+**Validation performed / results:**  
+- Unit tests cover serialization, restoration, and malformed stored progress.
+- UI smoke test confirms malformed stored progress falls back to an empty plan.
+
+**Next action:**  
+- Run full verification, update docs, and publish.
+
+### Adaptive Milestone 5 — Verification and documentation
+
+**Status:** IN PROGRESS
+
+**Work completed:**  
+- Updated `README.md` to describe AmaLearn as an adaptive learning companion.
+- Updated this documentation with adaptive milestones, validation evidence, known limitations, and implementation notes.
+
+**Validation performed / results:**  
+- `npm test` passed: 21 tests, 0 failures.
+- `npm run build` passed with Vite production build and Worker packaging.
+
+**Known limitations:**  
+- Progress is single-device browser storage, not account-synced.
+- Realtime web search still requires a configured provider key.
+- Live-browser pointer-click automation remains less reliable than the JSDOM flow in this environment.
+
+**Next action:**  
+- Publish the updated private Site and record the deployed version.
+
 ## Test and command log
 
 Append actual commands and results. Do not write “passed” unless the command ran and passed.
@@ -300,6 +425,11 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 21:45 WAT | Local `/api/search` middleware check | PASSED | Running dev server returned `503 Search provider not configured`, confirming the route is wired |
 | 2026-10-11 21:47 WAT | `npm test` | PASSED | 14 tests passed after final UI label polish |
 | 2026-10-11 21:47 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after final UI label polish |
+| 2026-10-11 22:23 WAT | Adaptive companion inspection | COMPLETE | Pasted adaptive companion brief, project docs, app code, matcher, catalogue, tests, README, and Git status inspected |
+| 2026-10-11 22:23 WAT | `npm test` | PASSED | 14 tests passed before adaptive companion changes |
+| 2026-10-11 22:23 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed before adaptive companion changes |
+| 2026-10-11 22:27 WAT | `npm test` | PASSED | 21 tests passed, including learning plan, check-ins, adaptation, persistence, and UI smoke coverage |
+| 2026-10-11 22:27 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after adaptive companion implementation |
 
 ## Known limitations and risks
 
@@ -307,6 +437,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
 - Realtime discovery is scaffolded but needs a configured provider key before it can return live web results.
+- Learning progress is stored only in local browser storage and does not sync across devices.
 - Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
 - Realtime results are not curated automatically; they should remain labelled as needing review until manually checked.
 
@@ -317,7 +448,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 14/14; `npm run build` passed.
-- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a configured provider key before it returns live results.
+- **Actual test/build results:** `npm test` passed 21/21; `npm run build` passed.
+- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
+- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a configured provider key before it returns live results; learning progress is local to one browser/device.
 - **Next three improvements:** Configure one provider key; add rate limiting and provider quality scoring; add full browser E2E and accessibility checks.
