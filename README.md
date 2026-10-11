@@ -9,6 +9,8 @@ npm install
 npm run dev
 ```
 
+Private deployment: https://amalearn.docilejelly2.chatgpt.site
+
 ## Validate
 
 ```bash

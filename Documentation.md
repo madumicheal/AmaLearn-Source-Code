@@ -8,8 +8,9 @@
 - **Current milestone:** Milestone 5 — Handoff and capstone demo
 - **Overall status:** COMPLETE
 - **Last updated:** 2026-10-11
-- **Current blocker:** None recorded yet
+- **Current blocker:** None recorded
 - **Demo-ready:** Yes
+- **Private deployment:** https://amalearn.docilejelly2.chatgpt.site
 
 ## Milestone tracker
 
@@ -20,7 +21,7 @@
 | 2. Explainable matching engine | COMPLETE | Deterministic matcher in `src/lib/matcher.js`; unit tests pass |
 | 3. Learner-facing experience | COMPLETE | React form, results cards, empty state, validation, responsive CSS |
 | 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; browser smoke check completed via keyboard submit |
-| 5. Handoff and capstone demo | COMPLETE | README and this documentation updated; local dev server running |
+| 5. Handoff and capstone demo | COMPLETE | README and this documentation updated; local dev server running; private Sites deployment succeeded |
 
 ## Repository baseline
 
@@ -210,6 +211,7 @@ Record material decisions here. Include alternatives considered and why the sele
 **Validation performed / results:**  
 - `npm test` and `npm run build` passed after the final form-submission fix.
 - Local preview is available at `http://127.0.0.1:5173/`.
+- Private Sites deployment succeeded at `https://amalearn.docilejelly2.chatgpt.site`.
 
 **Known limitations:**  
 - Starter catalogue only; not exhaustive web search.
@@ -245,6 +247,7 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 20:19 WAT | `npm run dev -- --port 5173` | PASSED | Local server running at `http://127.0.0.1:5173/`; required escalated port permission after sandbox EPERM |
 | 2026-10-11 20:20 WAT | Browser smoke check | OBSERVED | Initial render showed labelled form, empty state, and 20-resource catalogue count |
 | 2026-10-11 20:22 WAT | Browser smoke check | OBSERVED | Keyboard-submitted `learn Python basics` rendered 6 cards; first visible title was `Python` |
+| 2026-10-11 20:47 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_5879e97a816481919556d9c4d1341ce2` |
 
 ## Known limitations and risks
 
@@ -257,6 +260,8 @@ Append actual commands and results. Do not write “passed” unless the command
 ## Handoff notes
 
 - **Run command:** `npm run dev -- --port 5173`
+- **Local preview:** `http://127.0.0.1:5173/`
+- **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
 - **Actual test/build results:** `npm test` passed 6/6; `npm run build` passed.
