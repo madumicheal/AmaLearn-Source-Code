@@ -33,3 +33,7 @@ npm run build
 - AmaLearn matches only the local starter catalogue; it does not search the whole web.
 - Metadata is conservative. Unknown duration, accessibility, low-data, or download claims are shown as unknown rather than guessed.
 - No learner account, analytics, persistence, paid API, or LLM is required.
+
+## Roadmap
+
+See [AUDIT_AND_ROADMAP.md](./AUDIT_AND_ROADMAP.md) for the resource-quality audit, accessibility/usability notes, and the recommended realtime search architecture.

@@ -11,6 +11,7 @@
 - **Current blocker:** None recorded
 - **Demo-ready:** Yes
 - **Private deployment:** https://amalearn.docilejelly2.chatgpt.site
+- **Latest audit:** `AUDIT_AND_ROADMAP.md`
 
 ## Milestone tracker
 
@@ -256,6 +257,10 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 21:08 WAT | `npm test` | PASSED | 10 tests passed, including JSDOM UI smoke tests |
 | 2026-10-11 21:08 WAT | `npm run build` | PASSED | Vite production build completed after catalogue, matcher, UI, and test updates |
 | 2026-10-11 21:09 WAT | Browser review | OBSERVED | Private deployment reached expected ChatGPT login gate; local preview verified 24 resources, suggested path, Python recommendations, and Nigeria digital literacy recommendations |
+| 2026-10-11 21:22 WAT | MVP audit | COMPLETE | Added `AUDIT_AND_ROADMAP.md` covering resource quality, matching, accessibility, usability, capstone positioning, and realtime search architecture |
+| 2026-10-11 21:23 WAT | `npm test` | PASSED | 10 tests passed after accessibility/metadata UI updates |
+| 2026-10-11 21:23 WAT | `npm run build` | PASSED | Vite production build completed after audit improvements |
+| 2026-10-11 21:24 WAT | Browser review | OBSERVED | Local preview verified skip link, resource-specific source link labels, language and checked metadata, and DL4ALL-first ranking for `digital literacy Nigeria` |
 
 ## Known limitations and risks
 
@@ -264,6 +269,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
 - The MVP does not promise exhaustive internet-wide discovery; it matches the available catalogue.
 - Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
+- Realtime web search is not implemented yet; `AUDIT_AND_ROADMAP.md` recommends a backend-proxied provider architecture to avoid exposing API keys and to preserve recommendation trust.
 
 ## Handoff notes
 
@@ -274,5 +280,5 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Build command:** `npm run build`
 - **Actual test/build results:** `npm test` passed 10/10; `npm run build` passed.
 - **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, match explanations, conservative metadata display, validation, reset, responsive layout, local catalogue validation, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login.
-- **Next three improvements:** Add full browser E2E tests; expand catalogue with more verified regional resources; add better metadata provenance notes for each resource.
+- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a backend/provider integration.
+- **Next three improvements:** Add provenance metadata per resource; add backend realtime search endpoint with one provider adapter; add full browser E2E and accessibility checks.

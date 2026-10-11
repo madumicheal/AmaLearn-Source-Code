@@ -96,6 +96,9 @@ export function App() {
 
   return (
     <main className="app-shell">
+      <a className="skip-link" href="#results-title">
+        Skip to recommendations
+      </a>
       <section className="workspace" aria-labelledby="app-title">
         <header className="topbar">
           <div className="brand" aria-label="AmaLearn">
@@ -275,7 +278,13 @@ function ResourceCard({ recommendation }) {
           <p className="provider">{resource.provider}</p>
           <h3>{resource.title}</h3>
         </div>
-        <a className="resource-link" href={resource.url} target="_blank" rel="noreferrer">
+        <a
+          className="resource-link"
+          href={resource.url}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open source for ${resource.title}`}
+        >
           Open source
         </a>
       </div>
@@ -287,6 +296,8 @@ function ResourceCard({ recommendation }) {
         <MetaItem label="Format" value={formatValue(resource.format)} />
         <MetaItem label="Duration" value={resource.durationLabel} />
         <MetaItem label="Download" value={availabilityLabel(resource.downloadable)} />
+        <MetaItem label="Language" value={resource.language || "Unknown"} />
+        <MetaItem label="Checked" value={resource.lastChecked || "Unknown"} />
       </dl>
 
       <div className="notes">
