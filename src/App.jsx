@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { projects } from "./data/projects.js";
 import { resources } from "./data/resources.js";
+import { findTrackById, learningTracks, trackCategories } from "./data/tracks.js";
 import {
   addResourceToPlan,
   createEmptyPlan,
@@ -99,6 +100,7 @@ export function App() {
   const [needs, setNeeds] = useState(initialNeeds);
   const [submittedNeeds, setSubmittedNeeds] = useState(null);
   const [touched, setTouched] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState("");
   const [learningPlan, setLearningPlan] = useState(loadSavedPlan);
   const [planMessage, setPlanMessage] = useState("");
   const [checkInDifficulty, setCheckInDifficulty] = useState("");
@@ -155,6 +157,7 @@ export function App() {
   );
   const planSummary = useMemo(() => summarizeProgress(learningPlan), [learningPlan]);
   const nextActivity = useMemo(() => getNextActivity(learningPlan), [learningPlan]);
+  const selectedTrack = useMemo(() => findTrackById(selectedTrackId), [selectedTrackId]);
 
   const goalError =
     touched && needs.goal.trim().length < 2
@@ -166,10 +169,12 @@ export function App() {
   }, [learningPlan]);
 
   function updateNeed(field, value) {
+    setSelectedTrackId("");
     setNeeds((current) => ({ ...current, [field]: value }));
   }
 
   function applyDirectionPrompt(prompt) {
+    setSelectedTrackId("");
     setNeeds({
       goal: prompt.goal,
       level: prompt.level,
@@ -178,6 +183,23 @@ export function App() {
       connectivity: prompt.connectivity,
     });
     setTouched(false);
+  }
+
+  function applyLearningTrack(track) {
+    const nextNeeds = {
+      goal: track.goal,
+      level: track.level,
+      timeMinutes: track.timeMinutes,
+      format: track.format,
+      connectivity: track.connectivity,
+    };
+
+    setNeeds(nextNeeds);
+    setSubmittedNeeds(nextNeeds);
+    setSelectedTrackId(track.id);
+    setTouched(false);
+    setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
+    setAdaptiveSuggestion(null);
   }
 
   function handleSubmit(event) {
@@ -194,6 +216,7 @@ export function App() {
     };
 
     setNeeds(nextNeeds);
+    setSelectedTrackId("");
 
     if (nextNeeds.goal.length < 2) {
       setSubmittedNeeds(null);
@@ -210,6 +233,7 @@ export function App() {
   function handleReset() {
     setNeeds(initialNeeds);
     setSubmittedNeeds(null);
+    setSelectedTrackId("");
     setTouched(false);
     setRealtimeSearch({ status: "idle", message: "", provider: "", results: [] });
     setAdaptiveSuggestion(null);
@@ -371,6 +395,14 @@ export function App() {
               </div>
             </div>
 
+            <TrackBrowser
+              categories={trackCategories}
+              tracks={learningTracks}
+              resources={resources}
+              selectedTrackId={selectedTrackId}
+              onSelectTrack={applyLearningTrack}
+            />
+
             <div className="form-row">
               <SelectField
                 id="level"
@@ -420,8 +452,13 @@ export function App() {
               <div>
                 <p className="eyebrow">Recommendations</p>
                 <h2 id="results-title">
-                  {submittedNeeds ? `Best matches for "${submittedNeeds.goal}"` : "Ready when you are"}
+                  {selectedTrack
+                    ? `${selectedTrack.title} track`
+                    : submittedNeeds
+                      ? `Best matches for "${submittedNeeds.goal}"`
+                      : "Ready when you are"}
                 </h2>
+                {selectedTrack ? <p className="track-summary">{selectedTrack.summary}</p> : null}
               </div>
               <span className="catalogue-count">{resources.length} resources</span>
             </div>
@@ -496,6 +533,53 @@ export function App() {
         </div>
       </section>
     </main>
+  );
+}
+
+function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelectTrack }) {
+  const resourceIds = useMemo(() => new Set(resources.map((resource) => resource.id)), [resources]);
+
+  return (
+    <section className="track-browser" aria-labelledby="tracks-title">
+      <div className="track-browser-heading">
+        <p className="eyebrow">Browse tracks</p>
+        <h2 id="tracks-title">Choose a ready path</h2>
+      </div>
+      <div className="track-category-list">
+        {categories.map((category) => {
+          const categoryTracks = tracks.filter((track) => track.category === category.id);
+
+          return (
+            <div className="track-category" key={category.id}>
+              <div>
+                <h3>{category.label}</h3>
+                <p>{category.description}</p>
+              </div>
+              <div className="track-list">
+                {categoryTracks.map((track) => {
+                  const coveredResources = track.resourceIds.filter((id) => resourceIds.has(id)).length;
+                  const isSelected = selectedTrackId === track.id;
+
+                  return (
+                    <button
+                      className={isSelected ? "track-card selected" : "track-card"}
+                      key={track.id}
+                      type="button"
+                      onClick={() => onSelectTrack(track)}
+                      aria-pressed={isSelected}
+                    >
+                      <span>{track.title}</span>
+                      <small>{track.summary}</small>
+                      <strong>{coveredResources} catalogue matches</strong>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 

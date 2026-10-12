@@ -73,6 +73,25 @@ test("learner can submit needs and see recommendations with a study path", async
   }
 });
 
+test("learner can choose a ready track and see matched catalogue resources", async () => {
+  const rendered = await renderApp();
+
+  try {
+    await act(async () => {
+      [...document.querySelectorAll(".track-card")]
+        .find((button) => button.textContent.includes("Frontend Developer"))
+        .click();
+    });
+
+    assert.match(document.querySelector("#goal").value, /frontend/);
+    assert.match(document.querySelector("#results-title").textContent, /Frontend Developer track/);
+    assert.ok(document.querySelectorAll(".resource-card").length > 0);
+    assert.match(document.querySelector(".track-summary").textContent, /HTML/);
+  } finally {
+    await cleanup(rendered);
+  }
+});
+
 test("empty goal submission shows validation without recommendations", async () => {
   const rendered = await renderApp();
 

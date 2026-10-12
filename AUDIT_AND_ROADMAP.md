@@ -1,10 +1,10 @@
 # AmaLearn Audit and Roadmap
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Executive Summary
 
-AmaLearn is in a strong MVP state for a capstone: the core flow works, the matching logic is deterministic and tested, the catalogue is conservative rather than inflated, and the UI now gives learners a source-backed recommendation list plus a suggested path.
+AmaLearn is in a strong MVP state for a capstone: the core flow works, the matching logic is deterministic and tested, the catalogue is conservative rather than inflated, and the UI now gives learners source-backed recommendations, ready tracks, and a suggested path.
 
 The next product risk is not basic functionality. It is trust at scale. To support any subject or course in realtime, AmaLearn now has a server-side search layer scaffold, and it still needs a configured provider key plus quality controls before realtime results should be treated as reliable.
 
@@ -13,27 +13,30 @@ The next product risk is not basic functionality. It is trust at scale. To suppo
 ### Resource Quality
 
 Current catalogue:
-- 24 resources.
-- 17 providers.
+- 64 resources.
+- 30 providers.
 - 2 resources with known estimated minutes.
-- 4 resources with verified downloadable status.
+- 8 resources with verified downloadable status.
 - 2 resources with verified low-data suitability.
+- 18 ready tracks across career paths, quick skills, school support, and project paths.
 - 0 resources with detailed accessibility metadata.
 
 Strengths:
 - Resources are real and source-backed.
 - Unknown metadata is shown as unknown instead of guessed.
 - The catalogue now includes more regional and low-connectivity relevance through NITDA DL4ALL, Kolibri, African Storybook, and OER Africa.
+- The browseable track layer makes roadmap-style discovery possible without pretending AmaLearn hosts the courses itself.
 
 Risks:
 - Duration and accessibility metadata are still thin.
 - Provider trust is implicit, not yet represented as structured data.
 - Catalogue entries do not yet store a provenance note explaining where each claim was verified.
+- Track resource lists are manually curated and should keep growing through review rather than automatic realtime promotion.
 
 Recommended next improvements:
 - Add `verificationNotes` per resource for claims such as downloadable, low-data, duration, and accessibility.
 - Add `resourceType` or `providerType`, such as official documentation, open textbook, platform course, offline platform, or teacher resource.
-- Add at least 10 more Nigeria/Africa-relevant resources only when direct source URLs and metadata can be verified.
+- Add more Nigeria/Africa-relevant resources only when direct source URLs and metadata can be verified.
 
 ### Matching Quality
 
@@ -42,6 +45,7 @@ Strengths:
 - Topic fit is now required, so unrelated resources are not returned only because format, level, or connectivity preferences match.
 - Study paths are generated only from ranked recommendations.
 - Tests cover topic changes, format changes, low-data preference, empty catalogues, unrelated goals, and study path grounding.
+- Tests cover track integrity and ensure each ready track returns catalogue matches.
 
 Risks:
 - Topic matching is still keyword-based.

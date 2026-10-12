@@ -21,7 +21,7 @@
 | Milestone | Status | Evidence / notes |
 |---|---|---|
 | 0. Repository reconnaissance and baseline | COMPLETE | Empty Git repository confirmed; React + Vite selected per user preference |
-| 1. Data model and credible resource catalogue | COMPLETE | 24 curated resources in `src/data/resources.js`; schema validation covered by tests |
+| 1. Data model and credible resource catalogue | COMPLETE | 64 curated resources in `src/data/resources.js`; schema validation covered by tests |
 | 2. Explainable matching engine | COMPLETE | Deterministic matcher and suggested study path in `src/lib/matcher.js`; tests pass |
 | 3. Learner-facing experience | COMPLETE | React form, suggested path, results cards, empty state, validation, responsive CSS |
 | 4. Integration and quality assurance | COMPLETE | `npm test` and `npm run build` pass; JSDOM UI smoke tests and browser review completed |
@@ -92,6 +92,7 @@ Record material decisions here. Include alternatives considered and why the sele
 | 2026-10-11 | Add realtime search behind `POST /api/search` instead of calling search APIs from the browser | Keeps provider keys server-side and lets AmaLearn normalize, label, and review realtime resources before presenting them as recommendations | Enables any-subject discovery while preserving the trust boundary between curated and unreviewed results |
 | 2026-10-11 | Implement adaptive learning with local browser storage and deterministic rules | The brief asks for a lightweight companion, not accounts, a database, or an AI tutor; local storage is enough for a private single-device plan and check-ins | Adds persistence and adaptation without new infrastructure, secrets, or learner accounts |
 | 2026-10-12 | Borrow roadmap.sh's path-and-project pattern without copying its full platform | A visible roadmap and concrete project suggestions improve direction while avoiding community, team, or roadmap-editor complexity | Adds a clearer Foundation-Practice-Apply-Review path and local project catalogue |
+| 2026-10-12 | Add ready tracks before expanding realtime dependence | Learners need recognizable paths they can browse immediately, while realtime search should remain an overflow path for topics outside the curated base | Adds 18 browseable tracks across career paths, quick skills, school support, and project paths |
 
 ## Milestone log
 
@@ -146,7 +147,7 @@ Record material decisions here. Include alternatives considered and why the sele
 - Unknown metadata is represented as `Unknown`/`unknown` rather than inferred.
 
 **Catalogue size and validation:**  
-- 24 resources.
+- 64 resources.
 - Validation is covered by `npm test`; all catalogue records currently pass schema checks.
 
 **Validation performed / results:**  
@@ -196,7 +197,7 @@ Record material decisions here. Include alternatives considered and why the sele
 
 **Validation performed / results:**  
 - `npm run build` passed.
-- Local browser preview rendered the form, initial empty state, 24-resource catalogue count, suggested path, and recommendation cards after a keyboard-submitted profile.
+- Local browser preview rendered the form, initial empty state, 64-resource catalogue count, suggested path, and recommendation cards after a keyboard-submitted profile.
 
 **Issues / risks:**  
 - Browser automation pointer-clicks behaved inconsistently in the in-app browser; keyboard submission was observed working. The app uses a normal form and submit button for real browser use.
@@ -294,7 +295,7 @@ Record material decisions here. Include alternatives considered and why the sele
 
 **Existing features to preserve:**  
 - Learner needs form for goal, level, time, format, and connectivity.
-- Curated 24-resource catalogue with conservative metadata.
+- Curated 64-resource catalogue with conservative metadata.
 - Deterministic matching in `src/lib/matcher.js`.
 - Recommendation cards, suggested path, validation, reset, and responsive styling.
 - Server-side `/api/search` scaffold and separate realtime result labelling.
@@ -465,7 +466,7 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 20:47 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_5879e97a816481919556d9c4d1341ce2` |
 | 2026-10-11 21:08 WAT | `npm test` | PASSED | 10 tests passed, including JSDOM UI smoke tests |
 | 2026-10-11 21:08 WAT | `npm run build` | PASSED | Vite production build completed after catalogue, matcher, UI, and test updates |
-| 2026-10-11 21:09 WAT | Browser review | OBSERVED | Private deployment reached expected ChatGPT login gate; local preview verified 24 resources, suggested path, Python recommendations, and Nigeria digital literacy recommendations |
+| 2026-10-11 21:09 WAT | Browser review | OBSERVED | Private deployment reached expected ChatGPT login gate; local preview verified the then-current 24-resource catalogue, suggested path, Python recommendations, and Nigeria digital literacy recommendations |
 | 2026-10-11 21:22 WAT | MVP audit | COMPLETE | Added `AUDIT_AND_ROADMAP.md` covering resource quality, matching, accessibility, usability, capstone positioning, and realtime search architecture |
 | 2026-10-11 21:23 WAT | `npm test` | PASSED | 10 tests passed after accessibility/metadata UI updates |
 | 2026-10-11 21:23 WAT | `npm run build` | PASSED | Vite production build completed after audit improvements |
@@ -494,10 +495,12 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 14:43 WAT | Sites environment readback | PASSED | `TAVILY_API_KEY` is present with `is_secret: true`; plaintext value was not returned |
 | 2026-10-12 15:06 WAT | `npm test` | PASSED | 24 tests passed after UI polish |
 | 2026-10-12 15:06 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after UI polish |
+| 2026-10-12 16:14 WAT | `npm test` | PASSED | 28 tests passed after adding 18 ready tracks, expanding the catalogue to 64 resources, and adding track integrity/UI coverage |
+| 2026-10-12 16:14 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after Phase 1 tracks/catalogue expansion |
 
 ## Known limitations and risks
 
-- Catalogue coverage is intentionally small and curated.
+- Catalogue coverage is curated and broader, but not exhaustive.
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
 - Realtime discovery now has a provider secret configured, but search traffic still needs rate limiting before wider public use.
@@ -512,7 +515,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 24/24; `npm run build` passed.
-- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, roadmap view, local practice projects, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs rate limiting before wider use; learning progress is local to one browser/device.
+- **Actual test/build results:** `npm test` passed 28/28; `npm run build` passed.
+- **Working features:** Learner needs form, browseable tracks, deterministic recommendations, source-backed resource cards, grounded suggested path, roadmap view, local practice projects, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
+- **Known issues:** No full live-browser E2E framework; track and catalogue metadata still need ongoing review as they grow; private deployment requires ChatGPT login; realtime search needs rate limiting before wider use; learning progress is local to one browser/device.
 - **Next three improvements:** Add rate limiting and provider quality scoring; add full browser E2E and accessibility checks; add a review workflow to promote realtime results into curated resources.
