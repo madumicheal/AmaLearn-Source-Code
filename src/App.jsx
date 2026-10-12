@@ -319,7 +319,15 @@ export function App() {
               <h1 id="app-title">Find the right resource for your next study session.</h1>
             </div>
           </div>
-          <p className="tagline">Curated sources, ranked with clear reasons.</p>
+          <div className="topbar-aside" aria-label="AmaLearn learning loop">
+            <p className="tagline">Curated sources, roadmap steps, and adaptive progress.</p>
+            <div className="loop-strip" aria-hidden="true">
+              <span>Discover</span>
+              <span>Choose</span>
+              <span>Learn</span>
+              <span>Adapt</span>
+            </div>
+          </div>
         </header>
 
         <div className="experience-grid">

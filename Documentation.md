@@ -33,6 +33,7 @@
 | Adaptive 4. Persistence and polish | COMPLETE | Plan/check-ins persist in localStorage, malformed storage falls back safely, and reset progress is available |
 | Adaptive 5. Verification and documentation | COMPLETE | Tests and build passed locally and in Sites workflow; private deployment succeeded |
 | Roadmap/projects enhancement | COMPLETE | Added starter prompts, four-stage roadmap view, local project ideas, and provider secret configuration |
+| UI polish pass | COMPLETE | Refined typography, header, panels, cards, controls, and responsive spacing |
 
 ## Repository baseline
 
@@ -427,6 +428,23 @@ Record material decisions here. Include alternatives considered and why the sele
 **Next action:**  
 - Add rate limiting for `/api/search`, then verify realtime search from an authenticated private Site session.
 
+### UI Polish Pass
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Refined the page shell, header, and brand treatment with stronger typography and a compact learning-loop strip.
+- Improved form controls, buttons, prompt chips, and focus/hover states.
+- Added richer visual hierarchy for roadmap, study path, project ideas, realtime search, resource cards, and adaptive companion panels.
+- Improved card depth, section spacing, mobile stacking, and button sizing.
+
+**Validation performed / results:**  
+- `npm test` passed: 24 tests, 0 failures.
+- `npm run build` passed with Vite production build and Worker packaging.
+
+**Next action:**  
+- Publish the polished UI and push the source update to GitHub.
+
 ## Test and command log
 
 Append actual commands and results. Do not write “passed” unless the command ran and passed.
@@ -474,6 +492,8 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 14:43 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_23eb5fc525d4819183c1622e0d0e56f1`; environment revision `1` |
 | 2026-10-12 14:43 WAT | Production `/api/search` unauthenticated smoke check | OBSERVED | Returned `401 text/html` because the private Site login gate is expected before Worker API access |
 | 2026-10-12 14:43 WAT | Sites environment readback | PASSED | `TAVILY_API_KEY` is present with `is_secret: true`; plaintext value was not returned |
+| 2026-10-12 15:06 WAT | `npm test` | PASSED | 24 tests passed after UI polish |
+| 2026-10-12 15:06 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after UI polish |
 
 ## Known limitations and risks
 
