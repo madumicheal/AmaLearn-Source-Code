@@ -348,6 +348,20 @@ export function App() {
           </div>
           <div className="topbar-aside" aria-label="AmaLearn learning loop">
             <p className="tagline">AmaLearn recommends credible resources, explains the match, and helps you keep going.</p>
+            <div className="hero-stat-grid" aria-label="AmaLearn catalogue summary">
+              <span>
+                <strong>{resources.length}</strong>
+                Curated resources
+              </span>
+              <span>
+                <strong>{learningTracks.length}</strong>
+                Ready tracks
+              </span>
+              <span>
+                <strong>Live</strong>
+                Web search
+              </span>
+            </div>
             <div className="loop-strip" aria-hidden="true">
               <span>Discover</span>
               <span>Choose</span>
@@ -357,20 +371,20 @@ export function App() {
           </div>
         </header>
 
+        <TrackBrowser
+          categories={trackCategories}
+          tracks={learningTracks}
+          resources={resources}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={applyLearningTrack}
+        />
+
         <div className="experience-grid">
           <form className="needs-panel" onSubmit={handleSubmit} noValidate>
             <div className="start-note">
               <p className="eyebrow">Start here</p>
-              <p>Pick a ready track for speed, or type a custom goal when you already know what you need.</p>
+              <p>Choose a track above for speed, or refine a custom goal here.</p>
             </div>
-
-            <TrackBrowser
-              categories={trackCategories}
-              tracks={learningTracks}
-              resources={resources}
-              selectedTrackId={selectedTrackId}
-              onSelectTrack={applyLearningTrack}
-            />
 
             <div className="field-group">
               <label htmlFor="goal">Learning goal or topic</label>
@@ -558,8 +572,13 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
   return (
     <section className="track-browser" aria-labelledby="tracks-title">
       <div className="track-browser-heading">
-        <p className="eyebrow">Browse tracks</p>
-        <h2 id="tracks-title">Choose a ready path</h2>
+        <div>
+          <p className="eyebrow">Course categories</p>
+          <h2 id="tracks-title">Explore ready learning tracks</h2>
+        </div>
+        <p>
+          Start with a familiar path, then let AmaLearn match credible resources and a practical next step.
+        </p>
       </div>
       <div className="track-category-list">
         {categories.map((category, categoryIndex) => {
