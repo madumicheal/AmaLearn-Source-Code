@@ -415,14 +415,17 @@ Record material decisions here. Include alternatives considered and why the sele
 **Validation performed / results:**  
 - `npm test` passed: 24 tests, 0 failures.
 - `npm run build` passed with Vite production build and Worker packaging.
+- Sites deployment succeeded at `https://amalearn.docilejelly2.chatgpt.site` with version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_23eb5fc525d4819183c1622e0d0e56f1`.
+- Sites environment variables confirm `TAVILY_API_KEY` is present as a secret; plaintext value is not returned.
 
 **Known limitations:**  
 - Project ideas are local structured suggestions, not externally verified course resources.
 - Roadmap stages are rule-based and intentionally lightweight.
 - Search traffic still needs rate limiting before wider public use.
+- Unauthenticated production API smoke checks reach the private Site login gate (`401`) before the Worker route runs.
 
 **Next action:**  
-- Publish the roadmap/projects build and verify `/api/search` behavior after deployment.
+- Add rate limiting for `/api/search`, then verify realtime search from an authenticated private Site session.
 
 ## Test and command log
 
@@ -466,6 +469,11 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 14:39 WAT | Sites environment update | PASSED | Search provider key stored as a secret environment variable; plaintext value was not returned by Sites |
 | 2026-10-12 14:39 WAT | `npm test` | PASSED | 24 tests passed, including roadmap and project matching tests |
 | 2026-10-12 14:39 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after roadmap/projects implementation |
+| 2026-10-12 14:43 WAT | Sites workflow `npm test` | PASSED | 24 tests passed during source packaging |
+| 2026-10-12 14:43 WAT | Sites workflow `npm run build` | PASSED | Production Worker archive created at `/private/tmp/amalearn-site-roadmap-projects.tar.gz` |
+| 2026-10-12 14:43 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_23eb5fc525d4819183c1622e0d0e56f1`; environment revision `1` |
+| 2026-10-12 14:43 WAT | Production `/api/search` unauthenticated smoke check | OBSERVED | Returned `401 text/html` because the private Site login gate is expected before Worker API access |
+| 2026-10-12 14:43 WAT | Sites environment readback | PASSED | `TAVILY_API_KEY` is present with `is_secret: true`; plaintext value was not returned |
 
 ## Known limitations and risks
 
