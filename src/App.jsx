@@ -263,7 +263,7 @@ export function App() {
       if (!response.ok) {
         setRealtimeSearch({
           status: "error",
-          message: payload.message || "Realtime search is unavailable right now.",
+          message: formatRealtimeMessage(payload.message, "Realtime search is unavailable right now."),
           provider: "",
           results: [],
         });
@@ -272,7 +272,10 @@ export function App() {
 
       setRealtimeSearch({
         status: "complete",
-        message: payload.notice || "Realtime results need review before they become curated resources.",
+        message: formatRealtimeMessage(
+          payload.notice,
+          "These are live web results. AmaLearn has not reviewed their metadata yet.",
+        ),
         provider: payload.provider,
         results: payload.results || [],
       });
@@ -340,11 +343,11 @@ export function App() {
             </span>
             <div>
               <p className="eyebrow">AmaLearn</p>
-              <h1 id="app-title">Find the right resource for your next study session.</h1>
+              <h1 id="app-title">Choose a path or search a learning goal.</h1>
             </div>
           </div>
           <div className="topbar-aside" aria-label="AmaLearn learning loop">
-            <p className="tagline">Curated sources, roadmap steps, and adaptive progress.</p>
+            <p className="tagline">AmaLearn recommends credible resources, explains the match, and helps you keep going.</p>
             <div className="loop-strip" aria-hidden="true">
               <span>Discover</span>
               <span>Choose</span>
@@ -356,6 +359,19 @@ export function App() {
 
         <div className="experience-grid">
           <form className="needs-panel" onSubmit={handleSubmit} noValidate>
+            <div className="start-note">
+              <p className="eyebrow">Start here</p>
+              <p>Pick a ready track for speed, or type a custom goal when you already know what you need.</p>
+            </div>
+
+            <TrackBrowser
+              categories={trackCategories}
+              tracks={learningTracks}
+              resources={resources}
+              selectedTrackId={selectedTrackId}
+              onSelectTrack={applyLearningTrack}
+            />
+
             <div className="field-group">
               <label htmlFor="goal">Learning goal or topic</label>
               <input
@@ -380,7 +396,7 @@ export function App() {
             </div>
 
             <div className="direction-prompts" aria-label="What should I learn next suggestions">
-              <p className="eyebrow">What should I learn next?</p>
+              <p className="eyebrow">Quick prompts</p>
               <div>
                 {directionPrompts.map((prompt) => (
                   <button
@@ -394,14 +410,6 @@ export function App() {
                 ))}
               </div>
             </div>
-
-            <TrackBrowser
-              categories={trackCategories}
-              tracks={learningTracks}
-              resources={resources}
-              selectedTrackId={selectedTrackId}
-              onSelectTrack={applyLearningTrack}
-            />
 
             <div className="form-row">
               <SelectField
@@ -459,6 +467,12 @@ export function App() {
                       : "Ready when you are"}
                 </h2>
                 {selectedTrack ? <p className="track-summary">{selectedTrack.summary}</p> : null}
+                {submittedNeeds ? (
+                  <p className="results-subtitle">
+                    Start with the strongest catalogue matches. Use the roadmap, projects, and companion
+                    when you want more structure.
+                  </p>
+                ) : null}
               </div>
               <span className="catalogue-count">{resources.length} resources</span>
             </div>
@@ -491,18 +505,7 @@ export function App() {
               </>
             ) : (
               <>
-                <RoadmapView stages={learningRoadmap} />
                 <StudyPath steps={studyPath} />
-                <ProjectIdeas ideas={projectIdeas} />
-                <RealtimeSearchPanel
-                  status={realtimeSearch.status}
-                  message={realtimeSearch.message}
-                  provider={realtimeSearch.provider}
-                  results={realtimeRecommendations}
-                  plan={learningPlan}
-                  onSearch={handleRealtimeSearch}
-                  onAddToPlan={handleAddToPlan}
-                />
                 <div className="resource-list">
                   {recommendations.map((recommendation) => (
                     <ResourceCard
@@ -513,6 +516,19 @@ export function App() {
                     />
                   ))}
                 </div>
+                <div className="secondary-guidance" aria-label="Optional learning structure">
+                  <RoadmapView stages={learningRoadmap} />
+                  <ProjectIdeas ideas={projectIdeas} />
+                </div>
+                <RealtimeSearchPanel
+                  status={realtimeSearch.status}
+                  message={realtimeSearch.message}
+                  provider={realtimeSearch.provider}
+                  results={realtimeRecommendations}
+                  plan={learningPlan}
+                  onSearch={handleRealtimeSearch}
+                  onAddToPlan={handleAddToPlan}
+                />
               </>
             )}
             <LearningCompanion
@@ -546,15 +562,15 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
         <h2 id="tracks-title">Choose a ready path</h2>
       </div>
       <div className="track-category-list">
-        {categories.map((category) => {
+        {categories.map((category, categoryIndex) => {
           const categoryTracks = tracks.filter((track) => track.category === category.id);
 
           return (
-            <div className="track-category" key={category.id}>
-              <div>
-                <h3>{category.label}</h3>
+            <details className="track-category" key={category.id} open={categoryIndex === 0}>
+              <summary>
+                <span>{category.label}</span>
                 <p>{category.description}</p>
-              </div>
+              </summary>
               <div className="track-list">
                 {categoryTracks.map((track) => {
                   const coveredResources = track.resourceIds.filter((id) => resourceIds.has(id)).length;
@@ -575,7 +591,7 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
                   );
                 })}
               </div>
-            </div>
+            </details>
           );
         })}
       </div>
@@ -590,8 +606,8 @@ function RealtimeSearchPanel({ status, message, provider, results, plan, onSearc
         <p className="eyebrow">Realtime search</p>
         <h3 id="realtime-title">Search beyond the curated catalogue</h3>
         <p>
-          Realtime results are normalized into AmaLearn's format, but they stay marked
-          as needing review until their metadata is verified.
+          Live web results help when the catalogue is not enough. AmaLearn keeps their
+          duration, download, and accessibility details marked unknown until reviewed.
         </p>
       </div>
       <button
@@ -753,10 +769,9 @@ function LearningCompanion({
       </div>
 
       {plan.items.length === 0 ? (
-        <StatusMessage
-          title="No learning plan yet"
-          body="Add a resource from your recommendations to create a small plan for your next study session."
-        />
+        <p className="empty-helper">
+          No learning plan yet. Add a resource when you are ready to turn recommendations into a short study sequence.
+        </p>
       ) : (
         <>
           {nextActivity ? (
@@ -886,7 +901,7 @@ function ResourceCard({ recommendation, isInPlan = false, onAddToPlan }) {
         <div>
           <p className="provider">{resource.provider}</p>
           {resource.sourceType === "realtime" ? (
-            <span className="source-badge">Realtime - needs review</span>
+            <span className="source-badge">Live web - review metadata</span>
           ) : (
             <span className="source-badge curated">Curated</span>
           )}
@@ -984,6 +999,24 @@ function availabilityLabel(value) {
     return "Not verified";
   }
   return "Unknown";
+}
+
+function formatRealtimeMessage(message, fallback) {
+  const text = String(message || "").trim();
+
+  if (!text) {
+    return fallback;
+  }
+
+  if (text.toLowerCase().includes("provider key")) {
+    return "Live web search is connected in the app, but this environment does not have a server-side search key available.";
+  }
+
+  if (text.toLowerCase().includes("needs review") || text.toLowerCase().includes("not curated")) {
+    return "These are live web results. AmaLearn has not reviewed their metadata yet.";
+  }
+
+  return text;
 }
 
 function isResourceInPlan(plan, resourceId) {

@@ -497,6 +497,8 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 15:06 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after UI polish |
 | 2026-10-12 16:14 WAT | `npm test` | PASSED | 28 tests passed after adding 18 ready tracks, expanding the catalogue to 64 resources, and adding track integrity/UI coverage |
 | 2026-10-12 16:14 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after Phase 1 tracks/catalogue expansion |
+| 2026-10-12 19:43 WAT | `npm test` | PASSED | 28 tests passed after UX simplification, collapsed track groups, softened realtime copy, and reordered recommendation panels |
+| 2026-10-12 19:43 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after the MVP hierarchy pass |
 
 ## Known limitations and risks
 
@@ -516,6 +518,6 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
 - **Actual test/build results:** `npm test` passed 28/28; `npm run build` passed.
-- **Working features:** Learner needs form, browseable tracks, deterministic recommendations, source-backed resource cards, grounded suggested path, roadmap view, local practice projects, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
+- **Working features:** Learner needs form, browseable collapsed tracks, deterministic recommendations, source-backed resource cards, grounded suggested path, quieter roadmap/project guidance, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
 - **Known issues:** No full live-browser E2E framework; track and catalogue metadata still need ongoing review as they grow; private deployment requires ChatGPT login; realtime search needs rate limiting before wider use; learning progress is local to one browser/device.
 - **Next three improvements:** Add rate limiting and provider quality scoring; add full browser E2E and accessibility checks; add a review workflow to promote realtime results into curated resources.

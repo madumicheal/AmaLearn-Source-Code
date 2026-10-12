@@ -138,7 +138,7 @@ test("realtime search reports provider setup status", async () => {
       document.querySelector(".realtime-panel button").click();
     });
 
-    assert.match(document.querySelector(".realtime-error").textContent, /provider key is configured/);
+    assert.match(document.querySelector(".realtime-error").textContent, /server-side search key/);
   } finally {
     await cleanup(rendered);
   }
