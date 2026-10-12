@@ -23,7 +23,7 @@ writeFileSync(
 
 writeFileSync(
   path.join(serverDir, "index.js"),
-  `import { handleSearchRequest } from "./search.js";
+  `import { handleSearchRequest, securityHeaders } from "./search.js";
 
 const staticFiles = new Map(${JSON.stringify(staticFiles)});
 
@@ -44,6 +44,7 @@ export default {
 
     return new Response(asset.body, {
       headers: {
+        ...securityHeaders(),
         "Content-Type": asset.contentType,
         "Cache-Control": asset.cacheControl,
       },

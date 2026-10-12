@@ -173,12 +173,12 @@ Phase 1: Search design scaffold - complete
 - Add UI labels for curated vs realtime results.
 - Add tests for search-result normalization using fixtures.
 
-Phase 2: Backend search endpoint - scaffold complete, provider configuration pending
+Phase 2: Backend search endpoint - complete
 - Add a minimal server/API route.
 - Store provider API key server-side.
 - Normalize web results into AmaLearn resource candidates.
 - Add query length limits.
-- Add rate limiting before public or high-traffic use.
+- Add in-process rate limiting before provider calls.
 
 Phase 3: Quality controls
 - Add allowed/discouraged domain lists.
@@ -205,9 +205,8 @@ Strong capstone message:
 
 ## Immediate Next Backlog
 
-1. Configure one realtime search provider key in the deployment environment.
-2. Add provider quality weights and confidence labels to recommendation cards.
-3. Add `axe-core` accessibility checks.
-4. Add rate limiting for `/api/search`.
-5. Add domain quality rules and near-duplicate detection for realtime results.
-6. Add “Promote to curated catalogue” workflow for reviewed realtime results.
+1. Add provider quality weights and confidence labels to recommendation cards.
+2. Add `axe-core` accessibility checks.
+3. Add edge-level abuse monitoring before public launch.
+4. Add fuller domain quality rules and near-duplicate detection for realtime results.
+5. Add “Promote to curated catalogue” workflow for reviewed realtime results.

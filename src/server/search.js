@@ -1,5 +1,12 @@
 const MAX_QUERY_LENGTH = 160;
+const MAX_REQUEST_BODY_BYTES = 4096;
 const MAX_RESULTS = 8;
+const DEFAULT_RATE_LIMIT = {
+  maxRequests: 20,
+  windowMs: 60_000,
+};
+
+const defaultRateLimitStore = new Map();
 
 const providerDocs = {
   brave: "https://api-dashboard.search.brave.com/app/documentation/web-search",
@@ -7,7 +14,7 @@ const providerDocs = {
   google: "https://developers.google.com/custom-search/v1",
 };
 
-export async function handleSearchRequest(request, env = {}) {
+export async function handleSearchRequest(request, env = {}, options = {}) {
   if (request.method !== "POST") {
     return jsonResponse(
       {
@@ -21,8 +28,18 @@ export async function handleSearchRequest(request, env = {}) {
 
   let body;
   try {
-    body = await request.json();
-  } catch {
+    body = await readJsonBody(request);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return jsonResponse(
+        {
+          error: "Request too large",
+          message: `Keep realtime search requests under ${MAX_REQUEST_BODY_BYTES} bytes.`,
+        },
+        413,
+      );
+    }
+
     return jsonResponse(
       {
         error: "Invalid JSON",
@@ -50,6 +67,20 @@ export async function handleSearchRequest(request, env = {}) {
         message: `Keep realtime searches under ${MAX_QUERY_LENGTH} characters.`,
       },
       400,
+    );
+  }
+
+  const limit = checkRateLimit(request, options);
+  if (!limit.allowed) {
+    return jsonResponse(
+      {
+        error: "Rate limit exceeded",
+        message: "Too many realtime searches. Wait a moment before trying again.",
+      },
+      429,
+      {
+        "Retry-After": String(Math.ceil(limit.retryAfterMs / 1000)),
+      },
     );
   }
 
@@ -131,7 +162,7 @@ function normalizeSearchResult(result, index, queryTopics, providerName) {
   const url = cleanText(result.url);
   const description = cleanText(result.description || result.snippet || result.content);
 
-  if (!title || !isHttpUrl(url) || description.length < 24) {
+  if (!title || !isSafeResourceUrl(url) || description.length < 24) {
     return null;
   }
 
@@ -257,6 +288,59 @@ function normalizeQuery(value) {
   return cleanText(value).slice(0, MAX_QUERY_LENGTH + 1);
 }
 
+async function readJsonBody(request) {
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_REQUEST_BODY_BYTES) {
+    throw new RequestBodyTooLargeError();
+  }
+
+  const text = await request.text();
+  if (new TextEncoder().encode(text).length > MAX_REQUEST_BODY_BYTES) {
+    throw new RequestBodyTooLargeError();
+  }
+
+  return JSON.parse(text);
+}
+
+class RequestBodyTooLargeError extends Error {}
+
+function checkRateLimit(request, options = {}) {
+  const rateLimit = {
+    ...DEFAULT_RATE_LIMIT,
+    ...(options.rateLimit || {}),
+  };
+
+  if (!rateLimit.maxRequests || rateLimit.maxRequests < 1) {
+    return { allowed: true, retryAfterMs: 0 };
+  }
+
+  const store = options.rateLimitStore || defaultRateLimitStore;
+  const now = options.now ? options.now() : Date.now();
+  const key = rateLimitKeyFor(request);
+  const current = store.get(key);
+
+  if (!current || current.resetAt <= now) {
+    store.set(key, { count: 1, resetAt: now + rateLimit.windowMs });
+    return { allowed: true, retryAfterMs: 0 };
+  }
+
+  if (current.count >= rateLimit.maxRequests) {
+    return { allowed: false, retryAfterMs: Math.max(1000, current.resetAt - now) };
+  }
+
+  current.count += 1;
+  store.set(key, current);
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+function rateLimitKeyFor(request) {
+  const forwardedFor = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0].trim().toLowerCase();
+  }
+  return "anonymous";
+}
+
 function cleanText(value) {
   return String(value || "")
     .replace(/\s+/g, " ")
@@ -270,6 +354,56 @@ function isHttpUrl(value) {
   } catch {
     return false;
   }
+}
+
+function isSafeResourceUrl(value) {
+  if (!isHttpUrl(value)) {
+    return false;
+  }
+
+  const parsed = new URL(value);
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (parsed.username || parsed.password) {
+    return false;
+  }
+
+  if (
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    hostname.endsWith(".local")
+  ) {
+    return false;
+  }
+
+  if (isPrivateIpv4(hostname)) {
+    return false;
+  }
+
+  return hostname.includes(".");
+}
+
+function isPrivateIpv4(hostname) {
+  if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) {
+    return false;
+  }
+
+  const octets = hostname.split(".").map(Number);
+  if (octets.some((octet) => octet < 0 || octet > 255)) {
+    return true;
+  }
+
+  const [first, second] = octets;
+  return (
+    first === 10 ||
+    first === 127 ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    (first === 169 && second === 254)
+  );
 }
 
 function inferFormat(url, title, description) {
@@ -309,10 +443,21 @@ function slugify(value) {
     .replace(/^-+|-+$/g, "");
 }
 
+export function securityHeaders() {
+  return {
+    "Content-Security-Policy":
+      "default-src 'self'; connect-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Content-Type-Options": "nosniff",
+  };
+}
+
 function jsonResponse(payload, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(payload, null, 2), {
     status,
     headers: {
+      ...securityHeaders(),
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
       ...extraHeaders,

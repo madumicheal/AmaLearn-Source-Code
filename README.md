@@ -51,9 +51,10 @@ Supported provider environment variables:
 - Transparent rules-based next-step suggestions after check-ins.
 - Local browser progress persistence with a reset option.
 - Server-side realtime search endpoint with Brave, Tavily, and Google adapter support.
+- Search API hardening for request size limits, in-process rate limiting, unsafe URL filtering, and baseline security headers.
 - Realtime results displayed separately from curated recommendations with review status labels.
 - Empty and validation states.
-- Unit and UI smoke tests for catalogue validation, track integrity, ranking behavior, form submission, validation, study-path rendering, roadmap/project matching, search API normalization, learning plans, check-ins, adaptation, and malformed progress recovery.
+- Unit and UI smoke tests for catalogue validation, track integrity, ranking behavior, form submission, validation, study-path rendering, roadmap/project matching, search API normalization and hardening, learning plans, check-ins, adaptation, and malformed progress recovery.
 
 ## Limitations
 

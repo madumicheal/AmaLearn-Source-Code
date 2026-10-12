@@ -284,10 +284,10 @@ Record material decisions here. Include alternatives considered and why the sele
 **Known limitations:**  
 - No realtime results will appear until one provider key is configured in the server environment.
 - Realtime results are intentionally marked as needing review and should not be promoted into the curated catalogue automatically.
-- Rate limiting, domain quality rules, and near-duplicate detection are still backlog items.
+- Edge-level abuse monitoring and near-duplicate detection are still backlog items.
 
 **Next action:**  
-- Configure one search provider key, then add rate limiting and provider quality scoring before broader use.
+- Keep rate-limit settings under review, then add provider quality scoring before broader use.
 
 ### Adaptive Milestone 1 — Inspect and plan
 
@@ -401,7 +401,7 @@ Record material decisions here. Include alternatives considered and why the sele
 - Live-browser pointer-click automation remains less reliable than the JSDOM flow in this environment.
 
 **Next action:**  
-- Configure a realtime search provider key, then add rate limiting and provider quality scoring.
+- Keep realtime search rate limits under review, then add provider quality scoring.
 
 ### Roadmap/Projects Enhancement
 
@@ -423,11 +423,11 @@ Record material decisions here. Include alternatives considered and why the sele
 **Known limitations:**  
 - Project ideas are local structured suggestions, not externally verified course resources.
 - Roadmap stages are rule-based and intentionally lightweight.
-- Search traffic still needs rate limiting before wider public use.
+- Search traffic now has an in-process rate limit; wider public use should still add edge-level throttling and abuse monitoring.
 - Unauthenticated production API smoke checks reach the private Site login gate (`401`) before the Worker route runs.
 
 **Next action:**  
-- Add rate limiting for `/api/search`, then verify realtime search from an authenticated private Site session.
+- Verify realtime search from an authenticated private Site session after each deployment that touches the Worker.
 
 ### UI Polish Pass
 
@@ -499,13 +499,15 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 16:14 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after Phase 1 tracks/catalogue expansion |
 | 2026-10-12 19:43 WAT | `npm test` | PASSED | 28 tests passed after UX simplification, collapsed track groups, softened realtime copy, and reordered recommendation panels |
 | 2026-10-12 19:43 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after the MVP hierarchy pass |
+| 2026-10-12 20:11 WAT | `npm test` | PASSED | 31 tests passed after adding security regression coverage for request size limits, rate limiting, headers, and unsafe realtime URLs |
+| 2026-10-12 20:11 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after API security hardening |
 
 ## Known limitations and risks
 
 - Catalogue coverage is curated and broader, but not exhaustive.
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
-- Realtime discovery now has a provider secret configured, but search traffic still needs rate limiting before wider public use.
+- Realtime discovery now has a provider secret configured and an in-process rate limit; wider public use should still add edge-level abuse monitoring.
 - Learning progress is stored only in local browser storage and does not sync across devices.
 - Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
 - Realtime results are not curated automatically; they should remain labelled as needing review until manually checked.
@@ -517,7 +519,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 28/28; `npm run build` passed.
+- **Actual test/build results:** `npm test` passed 31/31; `npm run build` passed.
 - **Working features:** Learner needs form, browseable collapsed tracks, deterministic recommendations, source-backed resource cards, grounded suggested path, quieter roadmap/project guidance, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; track and catalogue metadata still need ongoing review as they grow; private deployment requires ChatGPT login; realtime search needs rate limiting before wider use; learning progress is local to one browser/device.
-- **Next three improvements:** Add rate limiting and provider quality scoring; add full browser E2E and accessibility checks; add a review workflow to promote realtime results into curated resources.
+- **Known issues:** No full live-browser E2E framework; track and catalogue metadata still need ongoing review as they grow; private deployment requires ChatGPT login; public launch would need edge-level search abuse monitoring; learning progress is local to one browser/device.
+- **Next three improvements:** Add provider quality scoring; add full browser E2E and accessibility checks; add a review workflow to promote realtime results into curated resources.
