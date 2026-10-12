@@ -199,6 +199,22 @@ a:focus-visible {
   margin-top: 4px;
 }
 
+.direction-prompts {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  border: 1px solid #e0dccb;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 12px;
+}
+
+.direction-prompts > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 button {
   min-height: 44px;
   border: 0;
@@ -222,6 +238,15 @@ button:disabled {
   border: 1px solid #b9c1bb;
   background: #ffffff;
   color: #25312e;
+}
+
+.prompt-chip {
+  min-height: 34px;
+  border: 1px solid #b9c1bb;
+  background: #ffffff;
+  color: #25312e;
+  padding: 0 10px;
+  font-size: 0.86rem;
 }
 
 .results-heading {
@@ -262,6 +287,96 @@ button:disabled {
 
 .status-message h3 {
   color: #17211f;
+}
+
+.roadmap-panel,
+.projects-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #d4d6c8;
+  border-radius: 8px;
+  background: #fffefa;
+  padding: 16px;
+}
+
+.roadmap-panel h3,
+.projects-panel h3 {
+  margin-bottom: 0;
+  font-size: 1.08rem;
+}
+
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roadmap-grid li {
+  display: grid;
+  gap: 6px;
+  border-top: 3px solid #206858;
+  background: #f7f8f2;
+  padding: 12px;
+}
+
+.roadmap-grid span {
+  color: #206858;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.roadmap-grid strong {
+  line-height: 1.22;
+}
+
+.roadmap-grid small {
+  color: #596662;
+  line-height: 1.35;
+}
+
+.project-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.project-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d8dacf;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.project-card h4 {
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.project-card p {
+  margin-bottom: 0;
+  color: #4b5754;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.project-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.project-meta div {
+  border-left: 3px solid #f8c66a;
+  background: #f7f8f2;
+  padding: 8px;
 }
 
 .study-path {
@@ -612,6 +727,11 @@ dd {
     grid-template-columns: 1fr;
   }
 
+  .roadmap-grid,
+  .project-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .needs-panel {
     position: static;
   }
@@ -643,7 +763,9 @@ dd {
 
   .form-row,
   .study-path ol,
-  .metadata-grid {
+  .metadata-grid,
+  .roadmap-grid,
+  .project-list {
     grid-template-columns: 1fr;
   }
 

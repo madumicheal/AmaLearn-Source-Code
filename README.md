@@ -42,6 +42,9 @@ Supported provider environment variables:
 - Deterministic matching logic with topic, level, format, time, and connectivity factors.
 - Recommendation cards with provider, source URL, metadata, and match reasons.
 - Suggested study path generated only from the top-ranked catalogue matches.
+- Roadmap view that groups the learning journey into Foundation, Practice, Apply, and Review.
+- Local practice-project ideas matched to the learner's topic.
+- Starter direction prompts for career path, quick skill, school support, and project-based learning.
 - Learning plan actions that let learners add, remove, and reorder selected resources.
 - Quick session check-ins for completed, partly completed, or need-help outcomes.
 - Transparent rules-based next-step suggestions after check-ins.
@@ -49,11 +52,11 @@ Supported provider environment variables:
 - Server-side realtime search endpoint with Brave, Tavily, and Google adapter support.
 - Realtime results displayed separately from curated recommendations with review status labels.
 - Empty and validation states.
-- Unit and UI smoke tests for catalogue validation, ranking behavior, form submission, validation, study-path rendering, search API normalization, learning plans, check-ins, adaptation, and malformed progress recovery.
+- Unit and UI smoke tests for catalogue validation, ranking behavior, form submission, validation, study-path rendering, roadmap/project matching, search API normalization, learning plans, check-ins, adaptation, and malformed progress recovery.
 
 ## Limitations
 
-- AmaLearn can only return realtime web results after a provider key is configured in the server environment.
+- Realtime web results depend on the configured server-side search provider.
 - Metadata is conservative. Unknown duration, accessibility, low-data, or download claims are shown as unknown rather than guessed.
 - Progress is saved only in the learner's current browser on the current device.
 - No learner account, analytics, paid API, or LLM is required for the adaptive companion.

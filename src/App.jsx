@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { projects } from "./data/projects.js";
 import { resources } from "./data/resources.js";
 import {
   addResourceToPlan,
@@ -14,6 +15,7 @@ import {
   summarizeProgress,
 } from "./lib/learningPlan.js";
 import { createStudyPath, findRecommendations } from "./lib/matcher.js";
+import { createLearningRoadmap, findProjectIdeas } from "./lib/roadmap.js";
 import { validateResources } from "./lib/validateResources.js";
 
 const levelOptions = [
@@ -58,6 +60,41 @@ const difficultyOptions = [
   { value: "hard", label: "Felt difficult" },
 ];
 
+const directionPrompts = [
+  {
+    label: "Career path",
+    goal: "web development",
+    level: "beginner",
+    timeMinutes: "60",
+    format: "course",
+    connectivity: "standard",
+  },
+  {
+    label: "Quick skill",
+    goal: "SQL basics",
+    level: "beginner",
+    timeMinutes: "30",
+    format: "interactive",
+    connectivity: "standard",
+  },
+  {
+    label: "School support",
+    goal: "algebra equations",
+    level: "beginner",
+    timeMinutes: "30",
+    format: "any",
+    connectivity: "low-data",
+  },
+  {
+    label: "Build project",
+    goal: "python basics",
+    level: "beginner",
+    timeMinutes: "60",
+    format: "any",
+    connectivity: "standard",
+  },
+];
+
 export function App() {
   const [needs, setNeeds] = useState(initialNeeds);
   const [submittedNeeds, setSubmittedNeeds] = useState(null);
@@ -99,6 +136,23 @@ export function App() {
     () => [...recommendations, ...realtimeRecommendations],
     [recommendations, realtimeRecommendations],
   );
+  const projectIdeas = useMemo(() => {
+    if (!submittedNeeds) {
+      return [];
+    }
+
+    return findProjectIdeas(projects, submittedNeeds, recommendations);
+  }, [submittedNeeds, recommendations]);
+  const learningRoadmap = useMemo(
+    () =>
+      createLearningRoadmap({
+        recommendations,
+        projects: projectIdeas,
+        plan: learningPlan,
+        needs: submittedNeeds || needs,
+      }),
+    [recommendations, projectIdeas, learningPlan, submittedNeeds, needs],
+  );
   const planSummary = useMemo(() => summarizeProgress(learningPlan), [learningPlan]);
   const nextActivity = useMemo(() => getNextActivity(learningPlan), [learningPlan]);
 
@@ -113,6 +167,17 @@ export function App() {
 
   function updateNeed(field, value) {
     setNeeds((current) => ({ ...current, [field]: value }));
+  }
+
+  function applyDirectionPrompt(prompt) {
+    setNeeds({
+      goal: prompt.goal,
+      level: prompt.level,
+      timeMinutes: prompt.timeMinutes,
+      format: prompt.format,
+      connectivity: prompt.connectivity,
+    });
+    setTouched(false);
   }
 
   function handleSubmit(event) {
@@ -282,6 +347,22 @@ export function App() {
               )}
             </div>
 
+            <div className="direction-prompts" aria-label="What should I learn next suggestions">
+              <p className="eyebrow">What should I learn next?</p>
+              <div>
+                {directionPrompts.map((prompt) => (
+                  <button
+                    className="prompt-chip"
+                    key={prompt.label}
+                    type="button"
+                    onClick={() => applyDirectionPrompt(prompt)}
+                  >
+                    {prompt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="form-row">
               <SelectField
                 id="level"
@@ -365,7 +446,9 @@ export function App() {
               </>
             ) : (
               <>
+                <RoadmapView stages={learningRoadmap} />
                 <StudyPath steps={studyPath} />
+                <ProjectIdeas ideas={projectIdeas} />
                 <RealtimeSearchPanel
                   status={realtimeSearch.status}
                   message={realtimeSearch.message}
@@ -488,6 +571,65 @@ function StudyPath({ steps }) {
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function RoadmapView({ stages }) {
+  return (
+    <section className="roadmap-panel" aria-labelledby="roadmap-title">
+      <div>
+        <p className="eyebrow">Roadmap</p>
+        <h3 id="roadmap-title">A simple path from learning to practice</h3>
+      </div>
+      <ol className="roadmap-grid">
+        {stages.map((stage) => (
+          <li key={stage.id}>
+            <span>{stage.label}</span>
+            <strong>{stage.item?.title || stage.description}</strong>
+            <small>{stage.note}</small>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function ProjectIdeas({ ideas }) {
+  if (ideas.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="projects-panel" aria-labelledby="projects-title">
+      <div>
+        <p className="eyebrow">Practice projects</p>
+        <h3 id="projects-title">Apply the topic with something small</h3>
+      </div>
+      <div className="project-list">
+        {ideas.map(({ project, reason }) => (
+          <article className="project-card" key={project.id}>
+            <div>
+              <span className="source-badge">Project idea</span>
+              <h4>{project.title}</h4>
+              <p>{project.description}</p>
+            </div>
+            <dl className="project-meta">
+              <MetaItem label="Level" value={formatValue(project.level)} />
+              <MetaItem label="Time" value={`${project.estimatedMinutes} minutes`} />
+            </dl>
+            <p>
+              <strong>Deliverable:</strong> {project.deliverable}
+            </p>
+            <p>
+              <strong>Why this project:</strong> {reason}
+            </p>
+            <p>
+              <strong>Access:</strong> {project.accessNotes}
+            </p>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }

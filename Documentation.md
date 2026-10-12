@@ -14,6 +14,7 @@
 - **Latest audit:** `AUDIT_AND_ROADMAP.md`
 - **Realtime search:** `/api/search` implemented; provider key configuration pending
 - **Adaptive companion:** Implemented with local learning plans, check-ins, and rules-based next steps
+- **Roadmap/projects:** Implemented with local project ideas and four-stage roadmap view
 
 ## Milestone tracker
 
@@ -31,6 +32,7 @@
 | Adaptive 3. Check-ins and adaptation | COMPLETE | Completed, partly completed, and need-help check-ins produce transparent next-step suggestions |
 | Adaptive 4. Persistence and polish | COMPLETE | Plan/check-ins persist in localStorage, malformed storage falls back safely, and reset progress is available |
 | Adaptive 5. Verification and documentation | COMPLETE | Tests and build passed locally and in Sites workflow; private deployment succeeded |
+| Roadmap/projects enhancement | COMPLETE | Added starter prompts, four-stage roadmap view, local project ideas, and provider secret configuration |
 
 ## Repository baseline
 
@@ -75,6 +77,9 @@
 - [x] Learner can record completed, partly completed, or need-help check-ins.
 - [x] AmaLearn gives transparent next-step suggestions after check-ins.
 - [x] Progress is saved locally and can be reset.
+- [x] Learner can see a simple roadmap from foundation to review.
+- [x] Learner can see small practice projects matched to the current topic.
+- [x] Realtime search provider secret is configured in Sites environment variables.
 
 ## Decisions and rationale
 
@@ -85,6 +90,7 @@ Record material decisions here. Include alternatives considered and why the sele
 | 2026-10-11 | Use React + Vite for the empty repository | User explicitly preferred React/Next/Vite; Vite keeps the MVP lightweight and fast to scaffold while preserving a clean React component model | Creates a small client-side app with local catalogue data and deterministic matching |
 | 2026-10-11 | Add realtime search behind `POST /api/search` instead of calling search APIs from the browser | Keeps provider keys server-side and lets AmaLearn normalize, label, and review realtime resources before presenting them as recommendations | Enables any-subject discovery while preserving the trust boundary between curated and unreviewed results |
 | 2026-10-11 | Implement adaptive learning with local browser storage and deterministic rules | The brief asks for a lightweight companion, not accounts, a database, or an AI tutor; local storage is enough for a private single-device plan and check-ins | Adds persistence and adaptation without new infrastructure, secrets, or learner accounts |
+| 2026-10-12 | Borrow roadmap.sh's path-and-project pattern without copying its full platform | A visible roadmap and concrete project suggestions improve direction while avoiding community, team, or roadmap-editor complexity | Adds a clearer Foundation-Practice-Apply-Review path and local project catalogue |
 
 ## Milestone log
 
@@ -395,6 +401,29 @@ Record material decisions here. Include alternatives considered and why the sele
 **Next action:**  
 - Configure a realtime search provider key, then add rate limiting and provider quality scoring.
 
+### Roadmap/Projects Enhancement
+
+**Status:** COMPLETE
+
+**Work completed:**  
+- Added `src/data/projects.js` with small local practice projects across Python, web, JavaScript, algebra, statistics, digital literacy, machine learning, and SQL.
+- Added `src/lib/roadmap.js` to match project ideas and build a four-stage roadmap: Foundation, Practice, Apply, Review.
+- Added starter prompt chips for learners who know they want a career path, quick skill, school support, or project-based path.
+- Added roadmap and practice-project panels to the recommendation flow.
+- Configured the realtime search provider key as a secret Sites environment variable. The value is not stored in source or documentation.
+
+**Validation performed / results:**  
+- `npm test` passed: 24 tests, 0 failures.
+- `npm run build` passed with Vite production build and Worker packaging.
+
+**Known limitations:**  
+- Project ideas are local structured suggestions, not externally verified course resources.
+- Roadmap stages are rule-based and intentionally lightweight.
+- Search traffic still needs rate limiting before wider public use.
+
+**Next action:**  
+- Publish the roadmap/projects build and verify `/api/search` behavior after deployment.
+
 ## Test and command log
 
 Append actual commands and results. Do not write “passed” unless the command ran and passed.
@@ -434,13 +463,16 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-11 22:31 WAT | Sites workflow `npm test` | PASSED | 21 tests passed during source packaging |
 | 2026-10-11 22:31 WAT | Sites workflow `npm run build` | PASSED | Production Worker archive created at `/private/tmp/amalearn-site-adaptive-companion.tar.gz` |
 | 2026-10-11 22:31 WAT | Sites deployment | PASSED | Private production URL: `https://amalearn.docilejelly2.chatgpt.site`; deployed version `appgprj_6acbe6552f04819195e479d28fbf3e01~appgver_955a296b04a48191880c3764a48d0ac3` |
+| 2026-10-12 14:39 WAT | Sites environment update | PASSED | Search provider key stored as a secret environment variable; plaintext value was not returned by Sites |
+| 2026-10-12 14:39 WAT | `npm test` | PASSED | 24 tests passed, including roadmap and project matching tests |
+| 2026-10-12 14:39 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after roadmap/projects implementation |
 
 ## Known limitations and risks
 
 - Catalogue coverage is intentionally small and curated.
 - Metadata is conservative; unknown is shown where unsupported claims would be risky.
 - Any AI-assisted explanation, if added, must remain optional and grounded in catalogue metadata.
-- Realtime discovery is scaffolded but needs a configured provider key before it can return live web results.
+- Realtime discovery now has a provider secret configured, but search traffic still needs rate limiting before wider public use.
 - Learning progress is stored only in local browser storage and does not sync across devices.
 - Browser pointer-click automation was inconsistent in the local in-app browser; keyboard submit, JSDOM UI smoke tests, and build/test validation passed.
 - Realtime results are not curated automatically; they should remain labelled as needing review until manually checked.
@@ -452,7 +484,7 @@ Append actual commands and results. Do not write “passed” unless the command
 - **Private deployed URL:** `https://amalearn.docilejelly2.chatgpt.site`
 - **Test command:** `npm test`
 - **Build command:** `npm run build`
-- **Actual test/build results:** `npm test` passed 21/21; `npm run build` passed.
-- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
-- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs a configured provider key before it returns live results; learning progress is local to one browser/device.
-- **Next three improvements:** Configure one provider key; add rate limiting and provider quality scoring; add full browser E2E and accessibility checks.
+- **Actual test/build results:** `npm test` passed 24/24; `npm run build` passed.
+- **Working features:** Learner needs form, deterministic recommendations, source-backed resource cards, grounded suggested path, roadmap view, local practice projects, learning plans, check-ins, adaptive next-step suggestions, conservative metadata display, validation, reset, responsive layout, local catalogue validation, realtime search API scaffold, Worker API routing, and JSDOM UI smoke validation.
+- **Known issues:** No full live-browser E2E framework; catalogue is still starter-sized; private deployment requires ChatGPT login; realtime search needs rate limiting before wider use; learning progress is local to one browser/device.
+- **Next three improvements:** Add rate limiting and provider quality scoring; add full browser E2E and accessibility checks; add a review workflow to promote realtime results into curated resources.
