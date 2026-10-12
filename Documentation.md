@@ -503,6 +503,8 @@ Append actual commands and results. Do not write “passed” unless the command
 | 2026-10-12 20:11 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after API security hardening |
 | 2026-10-12 22:52 WAT | `npm test` | PASSED | 31 tests passed after adapting the visual direction, moving tracks into a full-width category band, and removing sticky sidebar scrolling |
 | 2026-10-12 22:52 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after the layout balance pass |
+| 2026-10-12 23:05 WAT | `npm test` | PASSED | 31 tests passed after replacing expanding track details with a stable category selector and contained track grid |
+| 2026-10-12 23:05 WAT | `npm run build` | PASSED | Vite production build and Worker packaging passed after fixing hero containment and track-grid blank-space issues |
 
 ## Known limitations and risks
 

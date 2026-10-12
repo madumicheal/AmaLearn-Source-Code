@@ -567,7 +567,10 @@ export function App() {
 }
 
 function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelectTrack }) {
+  const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id || "");
   const resourceIds = useMemo(() => new Set(resources.map((resource) => resource.id)), [resources]);
+  const activeCategory = categories.find((category) => category.id === activeCategoryId) || categories[0];
+  const visibleTracks = tracks.filter((track) => track.category === activeCategory?.id);
 
   return (
     <section className="track-browser" aria-labelledby="tracks-title">
@@ -581,36 +584,42 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
         </p>
       </div>
       <div className="track-category-list">
-        {categories.map((category, categoryIndex) => {
+        {categories.map((category) => {
           const categoryTracks = tracks.filter((track) => track.category === category.id);
+          const isActive = category.id === activeCategory?.id;
 
           return (
-            <details className="track-category" key={category.id} open={categoryIndex === 0}>
-              <summary>
-                <span>{category.label}</span>
-                <p>{category.description}</p>
-              </summary>
-              <div className="track-list">
-                {categoryTracks.map((track) => {
-                  const coveredResources = track.resourceIds.filter((id) => resourceIds.has(id)).length;
-                  const isSelected = selectedTrackId === track.id;
+            <button
+              className={isActive ? "track-category active" : "track-category"}
+              key={category.id}
+              type="button"
+              onClick={() => setActiveCategoryId(category.id)}
+              aria-pressed={isActive}
+            >
+              <span>{category.label}</span>
+              <p>{category.description}</p>
+              <strong>{categoryTracks.length} tracks</strong>
+            </button>
+          );
+        })}
+      </div>
+      <div className="track-list" aria-label={`${activeCategory?.label || "Selected"} tracks`}>
+        {visibleTracks.map((track) => {
+          const coveredResources = track.resourceIds.filter((id) => resourceIds.has(id)).length;
+          const isSelected = selectedTrackId === track.id;
 
-                  return (
-                    <button
-                      className={isSelected ? "track-card selected" : "track-card"}
-                      key={track.id}
-                      type="button"
-                      onClick={() => onSelectTrack(track)}
-                      aria-pressed={isSelected}
-                    >
-                      <span>{track.title}</span>
-                      <small>{track.summary}</small>
-                      <strong>{coveredResources} catalogue matches</strong>
-                    </button>
-                  );
-                })}
-              </div>
-            </details>
+          return (
+            <button
+              className={isSelected ? "track-card selected" : "track-card"}
+              key={track.id}
+              type="button"
+              onClick={() => onSelectTrack(track)}
+              aria-pressed={isSelected}
+            >
+              <span>{track.title}</span>
+              <small>{track.summary}</small>
+              <strong>{coveredResources} catalogue matches</strong>
+            </button>
           );
         })}
       </div>
