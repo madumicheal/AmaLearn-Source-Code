@@ -1,6 +1,6 @@
 const TOPIC_WEIGHT = 46;
 const LEVEL_WEIGHT = 20;
-const FORMAT_WEIGHT = 14;
+const FORMAT_WEIGHT = 24;
 const TIME_WEIGHT = 10;
 const CONNECTIVITY_WEIGHT = 10;
 
@@ -53,9 +53,18 @@ export function findRecommendations(catalogue, needs, limit = 6) {
 
   const normalizedNeeds = normalizeNeeds(needs);
 
-  return catalogue
+  const scored = catalogue
     .map((resource) => scoreResource(resource, normalizedNeeds))
-    .filter((recommendation) => recommendation.score > 0 && recommendation.topicMatched)
+    .filter((recommendation) => recommendation.score > 0 && recommendation.topicMatched);
+
+  const formatScoped =
+    normalizedNeeds.format === "any"
+      ? scored
+      : scored.filter((recommendation) =>
+          matchesPreferredFormat(recommendation.resource, normalizedNeeds.format),
+        );
+
+  return formatScoped
     .sort((left, right) => {
       if (right.score !== left.score) {
         return right.score - left.score;
@@ -102,7 +111,7 @@ export function scoreResource(resource, needs) {
     });
   }
 
-  const formatScore = scoreFormat(resource.format, needs.format);
+  const formatScore = scoreFormat(resource, needs.format);
   score += formatScore * FORMAT_WEIGHT;
   if (needs.format === "any") {
     reasons.push({
@@ -252,17 +261,25 @@ function scoreLevel(resourceLevel, requestedLevel) {
   return 0.2;
 }
 
-function scoreFormat(resourceFormat, requestedFormat) {
+function scoreFormat(resource, requestedFormat) {
+  const resourceFormat = resource?.format;
   if (requestedFormat === "any" || resourceFormat === requestedFormat) {
     return 1;
   }
-  if (requestedFormat === "download" && resourceFormat === "reading") {
-    return 0.5;
-  }
-  if (requestedFormat === "course" && ["video", "interactive"].includes(resourceFormat)) {
-    return 0.45;
+  if (requestedFormat === "download" && resource?.downloadable === true) {
+    return 0.75;
   }
   return 0;
+}
+
+function matchesPreferredFormat(resource, requestedFormat) {
+  if (requestedFormat === "any") {
+    return true;
+  }
+  if (requestedFormat === "download") {
+    return resource.format === "download" || resource.downloadable === true;
+  }
+  return resource.format === requestedFormat;
 }
 
 function scoreTime(estimatedMinutes, availableMinutes) {

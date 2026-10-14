@@ -570,7 +570,12 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
   const [activeCategoryId, setActiveCategoryId] = useState(categories[0]?.id || "");
   const resourceIds = useMemo(() => new Set(resources.map((resource) => resource.id)), [resources]);
   const activeCategory = categories.find((category) => category.id === activeCategoryId) || categories[0];
+  const activeCategoryIndex = Math.max(
+    categories.findIndex((category) => category.id === activeCategory?.id),
+    0,
+  );
   const visibleTracks = tracks.filter((track) => track.category === activeCategory?.id);
+  const activeCategoryTrackCount = tracks.filter((track) => track.category === activeCategory?.id).length;
 
   return (
     <section className="track-browser" aria-labelledby="tracks-title">
@@ -583,25 +588,41 @@ function TrackBrowser({ categories, tracks, resources, selectedTrackId, onSelect
           Start with a familiar path, then let AmaLearn match credible resources and a practical next step.
         </p>
       </div>
-      <div className="track-category-list">
+      <div
+        className="track-segment-shell"
+        role="tablist"
+        aria-label="Learning track categories"
+        style={{
+          "--segment-count": categories.length,
+          "--active-segment": activeCategoryIndex,
+        }}
+      >
+        <span className="track-segment-indicator" aria-hidden="true" />
         {categories.map((category) => {
           const categoryTracks = tracks.filter((track) => track.category === category.id);
           const isActive = category.id === activeCategory?.id;
 
           return (
             <button
-              className={isActive ? "track-category active" : "track-category"}
+              className={isActive ? "track-segment-button active" : "track-segment-button"}
               key={category.id}
               type="button"
               onClick={() => setActiveCategoryId(category.id)}
-              aria-pressed={isActive}
+              role="tab"
+              aria-selected={isActive}
             >
               <span>{category.label}</span>
-              <p>{category.description}</p>
-              <strong>{categoryTracks.length} tracks</strong>
+              <strong>{categoryTracks.length}</strong>
             </button>
           );
         })}
+      </div>
+      <div className="track-segment-panel">
+        <div>
+          <p className="eyebrow">{activeCategoryTrackCount} tracks</p>
+          <h3>{activeCategory?.label}</h3>
+        </div>
+        <p>{activeCategory?.description}</p>
       </div>
       <div className="track-list" aria-label={`${activeCategory?.label || "Selected"} tracks`}>
         {visibleTracks.map((track) => {

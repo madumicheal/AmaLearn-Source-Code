@@ -7,6 +7,17 @@ const DEFAULT_RATE_LIMIT = {
 };
 
 const defaultRateLimitStore = new Map();
+const allowedFormats = new Set(["any", "course", "video", "interactive", "download", "reading"]);
+const lowSignalQueryTerms = new Set(["app", "web", "data", "code", "basic", "beginner"]);
+
+const formatQueryTerms = {
+  any: "course tutorial open educational resource learning resource",
+  course: "structured course curriculum learning path certification",
+  video: "video lesson lecture tutorial YouTube",
+  interactive: "interactive exercise practice lab hands-on challenge",
+  download: "pdf workbook downloadable open textbook filetype:pdf",
+  reading: "guide documentation article textbook reading material",
+};
 
 const providerDocs = {
   brave: "https://api-dashboard.search.brave.com/app/documentation/web-search",
@@ -70,6 +81,7 @@ export async function handleSearchRequest(request, env = {}, options = {}) {
     );
   }
 
+  const requestedFormat = normalizeFormat(body.format);
   const limit = checkRateLimit(request, options);
   if (!limit.allowed) {
     return jsonResponse(
@@ -112,14 +124,16 @@ export async function handleSearchRequest(request, env = {}, options = {}) {
   }
 
   try {
-    const rawResults = await provider.search(buildLearningQuery(query), env);
-    const resources = normalizeSearchResults(rawResults, query, provider.name);
+    const learningQuery = buildLearningQuery(query, requestedFormat);
+    const rawResults = await provider.search(learningQuery, env);
+    const resources = normalizeSearchResults(rawResults, query, provider.name, requestedFormat);
 
     return jsonResponse({
       source: "realtime",
       provider: provider.name,
       query,
-      searchedFor: buildLearningQuery(query),
+      searchedFor: learningQuery,
+      requestedFormat,
       count: resources.length,
       results: resources,
       notice:
@@ -139,13 +153,21 @@ export async function handleSearchRequest(request, env = {}, options = {}) {
   }
 }
 
-export function normalizeSearchResults(rawResults, originalQuery, providerName = "realtime") {
+export function normalizeSearchResults(
+  rawResults,
+  originalQuery,
+  providerName = "realtime",
+  requestedFormat = "any",
+) {
   const seen = new Set();
   const queryTopics = extractTopics(originalQuery);
+  const normalizedFormat = normalizeFormat(requestedFormat);
 
   return rawResults
     .map((result, index) => normalizeSearchResult(result, index, queryTopics, providerName))
     .filter(Boolean)
+    .filter((resource) => isRelevantToQuery(resource, queryTopics))
+    .filter((resource) => matchesRealtimeFormat(resource, normalizedFormat))
     .filter((resource) => {
       const key = resource.url.toLowerCase();
       if (seen.has(key)) {
@@ -280,12 +302,18 @@ async function searchGoogle(query, env) {
   }));
 }
 
-function buildLearningQuery(query) {
-  return `${query} course tutorial open educational resource learning resource`;
+function buildLearningQuery(query, requestedFormat = "any") {
+  const format = normalizeFormat(requestedFormat);
+  return `${query} ${formatQueryTerms[format] || formatQueryTerms.any}`;
 }
 
 function normalizeQuery(value) {
   return cleanText(value).slice(0, MAX_QUERY_LENGTH + 1);
+}
+
+function normalizeFormat(value) {
+  const format = cleanText(value).toLowerCase();
+  return allowedFormats.has(format) ? format : "any";
 }
 
 async function readJsonBody(request) {
@@ -408,23 +436,128 @@ function isPrivateIpv4(hostname) {
 
 function inferFormat(url, title, description) {
   const value = `${url} ${title} ${description}`.toLowerCase();
-  if (value.includes("youtube.com") || value.includes("video")) {
+  const pathname = isHttpUrl(url) ? new URL(url).pathname.toLowerCase() : "";
+  if (isDirectVideoUrl(url)) {
     return "video";
   }
-  if (value.endsWith(".pdf") || value.includes("filetype:pdf")) {
+  if (
+    pathname.endsWith(".pdf") ||
+    value.includes("filetype:pdf") ||
+    value.includes(" pdf") ||
+    value.includes("workbook") ||
+    value.includes("downloadable") ||
+    value.includes("open textbook")
+  ) {
     return "download";
   }
-  if (value.includes("course") || value.includes("certification")) {
+  if (
+    value.includes("course") ||
+    value.includes("certification") ||
+    value.includes("curriculum") ||
+    value.includes("learning path") ||
+    pathname.includes("/courses/") ||
+    pathname.includes("/course/") ||
+    pathname.includes("/learn/")
+  ) {
     return "course";
   }
-  if (value.includes("interactive") || value.includes("exercise")) {
+  if (
+    value.includes("interactive") ||
+    value.includes("exercise") ||
+    value.includes("practice") ||
+    value.includes("hands-on") ||
+    value.includes(" lab") ||
+    value.includes("challenge") ||
+    value.includes("quiz")
+  ) {
     return "interactive";
+  }
+  if (
+    value.includes("guide") ||
+    value.includes("documentation") ||
+    value.includes("docs") ||
+    value.includes("article") ||
+    value.includes("blog") ||
+    value.includes("post") ||
+    value.includes("reading")
+  ) {
+    return "reading";
   }
   return "other";
 }
 
 function inferDownloadable(url) {
   return url.toLowerCase().endsWith(".pdf") ? true : "unknown";
+}
+
+function matchesRealtimeFormat(resource, requestedFormat) {
+  if (requestedFormat === "any") {
+    return true;
+  }
+  if (requestedFormat === "reading") {
+    return resource.format === "reading" || resource.format === "other";
+  }
+  if (isLikelyPost(resource)) {
+    return false;
+  }
+  if (requestedFormat === "video") {
+    return resource.format === "video" && isDirectVideoUrl(resource.url);
+  }
+  if (requestedFormat === "download") {
+    return resource.format === "download" || resource.downloadable === true;
+  }
+  return resource.format === requestedFormat;
+}
+
+function isRelevantToQuery(resource, queryTopics) {
+  if (!Array.isArray(queryTopics) || queryTopics.length === 0) {
+    return true;
+  }
+
+  const value = `${resource.title} ${resource.description} ${resource.provider}`.toLowerCase();
+  const matches = queryTopics.filter((topic) => value.includes(topic));
+
+  if (matches.length === 0) {
+    return false;
+  }
+
+  if (matches.length > 1) {
+    return true;
+  }
+
+  return !lowSignalQueryTerms.has(matches[0]);
+}
+
+function isDirectVideoUrl(url) {
+  if (!isHttpUrl(url)) {
+    return false;
+  }
+
+  const parsed = new URL(url);
+  const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+  const pathname = parsed.pathname.toLowerCase();
+
+  return (
+    hostname === "youtube.com" ||
+    hostname === "youtu.be" ||
+    hostname === "vimeo.com" ||
+    hostname.endsWith(".vimeo.com") ||
+    (hostname === "khanacademy.org" && pathname.includes("/video/"))
+  );
+}
+
+function isLikelyPost(resource) {
+  const value = `${resource.url} ${resource.title} ${resource.description}`.toLowerCase();
+  return (
+    value.includes("/blog/") ||
+    value.includes("/posts/") ||
+    value.includes("/post/") ||
+    value.includes("/news/") ||
+    value.includes(" blog ") ||
+    value.includes(" blog:") ||
+    value.includes(" article ") ||
+    value.includes(" news ")
+  );
 }
 
 function extractTopics(value) {

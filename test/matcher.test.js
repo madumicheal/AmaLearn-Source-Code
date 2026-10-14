@@ -62,6 +62,31 @@ test("format preference can change ranking", () => {
   assert.notEqual(readingTop, interactiveTop);
 });
 
+test("format preference scopes catalogue recommendations", () => {
+  const courseRecommendations = findRecommendations(resources, {
+    goal: "python programming",
+    level: "beginner",
+    timeMinutes: 60,
+    format: "course",
+    connectivity: "standard",
+  });
+
+  assert.ok(courseRecommendations.length > 0);
+  assert.ok(courseRecommendations.every((item) => item.resource.format === "course"));
+});
+
+test("video preference does not fall back to reading when no curated videos match", () => {
+  const recommendations = findRecommendations(resources, {
+    goal: "python programming",
+    level: "beginner",
+    timeMinutes: 60,
+    format: "video",
+    connectivity: "standard",
+  });
+
+  assert.deepEqual(recommendations, []);
+});
+
 test("low-data preference lifts verified downloadable resources", () => {
   const top = findRecommendations(resources, {
     goal: "statistics",

@@ -217,7 +217,12 @@ h1 {
 }
 
 .needs-panel {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   padding: 24px;
+  scrollbar-gutter: stable;
 }
 
 .results-panel {
@@ -404,80 +409,103 @@ button:disabled {
   line-height: 1.45;
 }
 
-.track-category-list {
+.track-segment-shell {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  align-items: start;
+  grid-template-columns: repeat(var(--segment-count), minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(63, 119, 106, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 14px 34px rgba(23, 33, 31, 0.08);
+  padding: 5px;
 }
 
-.track-category {
-  display: grid;
-  min-height: 150px;
-  gap: 8px;
-  align-content: start;
-  border: 1px solid #eadfd2;
-  border-radius: 8px;
-  background: #fff8f1;
-  box-shadow: 0 8px 20px rgba(23, 33, 31, 0.04);
-  padding: 16px;
-  color: var(--ink);
-  text-align: left;
-}
-
-.track-category.active {
-  border-color: rgba(63, 119, 106, 0.5);
+.track-segment-indicator {
+  position: absolute;
+  inset: 5px auto 5px 5px;
+  width: calc((100% - 10px) / var(--segment-count));
+  border-radius: 999px;
   background: var(--green-deep);
-  color: #ffffff;
-  box-shadow: 0 14px 28px rgba(47, 95, 84, 0.16);
+  box-shadow: 0 10px 24px rgba(47, 95, 84, 0.22);
+  transform: translateX(calc(var(--active-segment) * 100%));
+  transition: transform 220ms ease, width 220ms ease;
 }
 
-.track-category span {
+.track-segment-button {
+  position: relative;
+  z-index: 1;
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 1.08rem;
-  font-weight: 950;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: transparent;
+  color: #40504b;
+  padding: 0 12px;
+  text-align: center;
 }
 
-.track-category span::after {
-  content: ">";
+.track-segment-button:hover:not(:disabled) {
+  background: rgba(63, 119, 106, 0.08);
+  transform: none;
+}
+
+.track-segment-button.active {
+  color: #ffffff;
+}
+
+.track-segment-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-segment-button strong {
   display: grid;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
+  min-width: 26px;
+  height: 26px;
   place-items: center;
   border-radius: 999px;
   background: rgba(63, 119, 106, 0.12);
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 900;
-}
-
-.track-category:not(.active) span::after {
   color: var(--green);
+  font-size: 0.78rem;
 }
 
-.track-category.active span::after {
-  background: var(--orange);
+.track-segment-button.active strong {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
-.track-category p {
+.track-segment-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid #dce7df;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(238, 248, 243, 0.95), rgba(255, 250, 244, 0.95)),
+    #ffffff;
+  padding: 14px 16px;
+}
+
+.track-segment-panel h3 {
   margin-bottom: 0;
-  color: inherit;
-  font-size: 0.84rem;
-  line-height: 1.35;
-  opacity: 0.82;
+  font-size: 1.12rem;
+  font-weight: 950;
 }
 
-.track-category strong {
-  margin-top: auto;
-  color: var(--orange-deep);
-  font-size: 0.8rem;
-}
-
-.track-category.active strong {
-  color: #ffd2bd;
+.track-segment-panel p {
+  max-width: 680px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .track-list {
@@ -1086,12 +1114,13 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .track-category-list {
+  .track-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .track-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .track-segment-panel {
+    align-items: start;
+    flex-direction: column;
   }
 
   .roadmap-grid,
@@ -1159,12 +1188,17 @@ dd {
     padding: 16px;
   }
 
+  .needs-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
   .form-row,
   .study-path ol,
   .metadata-grid,
   .roadmap-grid,
   .project-list,
-  .track-category-list,
   .track-list {
     grid-template-columns: 1fr;
   }
@@ -1173,8 +1207,23 @@ dd {
     padding: 16px;
   }
 
-  .track-category {
-    min-height: auto;
+  .track-segment-shell {
+    grid-template-columns: repeat(var(--segment-count), minmax(118px, 1fr));
+    overflow-x: auto;
+    border-radius: 8px;
+  }
+
+  .track-segment-indicator {
+    display: none;
+  }
+
+  .track-segment-button {
+    min-height: 42px;
+    border-radius: 6px;
+  }
+
+  .track-segment-button.active {
+    background: var(--green-deep);
   }
 
   .action-row {

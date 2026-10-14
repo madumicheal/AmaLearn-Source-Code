@@ -96,6 +96,37 @@ test("api search rate limits repeated requests without exposing provider secrets
   }
 });
 
+test("api search sends preferred format terms to the realtime provider", async () => {
+  let providerQuery = "";
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    providerQuery = JSON.parse(init.body).query;
+    return new Response(JSON.stringify({ results: [] }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    const response = await handleSearchRequest(
+      new Request("https://amalearn.test/api/search", {
+        method: "POST",
+        body: JSON.stringify({ query: "python programming", format: "video" }),
+      }),
+      { TAVILY_API_KEY: "test-key" },
+      { rateLimitStore: new Map() },
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.requestedFormat, "video");
+    assert.match(providerQuery, /video lesson lecture tutorial YouTube/);
+    assert.match(payload.searchedFor, /video lesson lecture tutorial YouTube/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("api responses include baseline security headers", async () => {
   const response = await handleSearchRequest(
     new Request("https://amalearn.test/api/search", {
@@ -109,6 +140,97 @@ test("api responses include baseline security headers", async () => {
   assert.equal(response.headers.get("Referrer-Policy"), "strict-origin-when-cross-origin");
   assert.match(response.headers.get("Permissions-Policy"), /camera=\(\)/);
   assert.match(response.headers.get("Content-Security-Policy"), /default-src 'self'/);
+});
+
+test("normalizes realtime search results according to video preference", () => {
+  const resources = normalizeSearchResults(
+    [
+      {
+        title: "Python loops video lesson",
+        url: "https://www.youtube.com/watch?v=lesson",
+        description: "A clear video lesson for learning Python loops with worked examples.",
+      },
+      {
+        title: "Python loops blog post",
+        url: "https://example.com/blog/python-loops",
+        description: "A blog post article about Python loops and common beginner mistakes.",
+      },
+    ],
+    "python loops",
+    "test",
+    "video",
+  );
+
+  assert.equal(resources.length, 1);
+  assert.equal(resources[0].format, "video");
+  assert.equal(resources[0].provider, "youtube.com");
+});
+
+test("video search rejects unrelated pages that only mention video", () => {
+  const resources = normalizeSearchResults(
+    [
+      {
+        title: "Brazil: Man Hospitalized After DIY Nose Job. YouTube Bans Rhinoplasty Tutorial.",
+        url: "https://www.businessinsider.com/man-hospitalized-after-diy-nose-job-youtube-tutorial",
+        description:
+          "A report about a removed YouTube tutorial and a medical incident unrelated to learning MIT App Inventor.",
+      },
+      {
+        title: "MIT App Inventor beginner video tutorial",
+        url: "https://www.youtube.com/watch?v=appinventorlesson",
+        description:
+          "A beginner video lesson that teaches MIT App Inventor basics and app building concepts.",
+      },
+    ],
+    "MIT App Inventor",
+    "test",
+    "video",
+  );
+
+  assert.equal(resources.length, 1);
+  assert.equal(resources[0].provider, "youtube.com");
+  assert.match(resources[0].title, /MIT App Inventor/);
+});
+
+test("realtime search rejects weak single-word topic matches", () => {
+  const resources = normalizeSearchResults(
+    [
+      {
+        title: "Best mobile app design news",
+        url: "https://example.com/news/mobile-app-design",
+        description: "A news item about mobile app design trends without the requested course material.",
+      },
+    ],
+    "app inventor",
+    "test",
+    "reading",
+  );
+
+  assert.equal(resources.length, 0);
+});
+
+test("normalizes realtime search results according to download preference", () => {
+  const resources = normalizeSearchResults(
+    [
+      {
+        title: "Statistics workbook PDF",
+        url: "https://example.edu/statistics-workbook.pdf",
+        description: "A downloadable PDF workbook with statistics exercises for learners.",
+      },
+      {
+        title: "Statistics news article",
+        url: "https://example.edu/news/statistics-for-schools",
+        description: "A news article about statistics education and classroom resources.",
+      },
+    ],
+    "statistics workbook",
+    "test",
+    "download",
+  );
+
+  assert.equal(resources.length, 1);
+  assert.equal(resources[0].format, "download");
+  assert.equal(resources[0].downloadable, true);
 });
 
 test("normalizes realtime search results into AmaLearn resources", () => {
